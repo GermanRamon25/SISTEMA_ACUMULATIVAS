@@ -1,0 +1,56 @@
+﻿<Window x:Class="SISTEMA_ACUMULATIVAS.RegistroWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS"
+        mc:Ignorable="d"
+        Title="RegistroWindow" Height="500" Width="400"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None" ResizeMode="NoResize"
+        Background="#FF1E1E1E">
+
+    <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+        <StackPanel Margin="30">
+
+            <TextBlock Text="REGISTRO DE USUARIO" 
+                       FontSize="22" FontWeight="Bold" 
+                       Foreground="White" 
+                       HorizontalAlignment="Center" Margin="0,10,0,30"/>
+
+            <TextBlock Text="Nombre Completo:" 
+                       Foreground="White" FontWeight="Medium" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtNombreCompleto" 
+                     FontSize="14" Padding="5" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Nombre de Usuario:" 
+                       Foreground="White" FontWeight="Medium" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtUsuario" 
+                     FontSize="14" Padding="5" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Contraseña:" 
+                       Foreground="White" FontWeight="Medium" Margin="0,0,0,5"/>
+            <PasswordBox x:Name="txtPassword" 
+                         FontSize="14" Padding="5" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Confirmar Contraseña:" 
+                       Foreground="White" FontWeight="Medium" Margin="0,0,0,5"/>
+            <PasswordBox x:Name="txtConfirmPassword" 
+                         FontSize="14" Padding="5" Margin="0,0,0,25"/>
+
+            <Button x:Name="btnRegistrar" Content="Registrar" 
+                    FontSize="16" FontWeight="Bold" 
+                    Foreground="#FF333333" Background="White" 
+                    Padding="10" Margin="0,0,0,15" 
+                    BorderThickness="0" Cursor="Hand"
+                    Click="btnRegistrar_Click"/>
+
+            <Button x:Name="btnVolver" Content="Volver al Login" 
+                    Background="Transparent" BorderThickness="0" 
+                    Foreground="#FF007BFF" HorizontalAlignment="Center" 
+                    Cursor="Hand"
+                    Click="btnVolver_Click"/>
+
+        </StackPanel>
+    </Grid>
+</Window>

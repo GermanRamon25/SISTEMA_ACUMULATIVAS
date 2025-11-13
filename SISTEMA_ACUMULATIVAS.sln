@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SISTEMA_ACUMULATIVAS", "SISTEMA_ACUMULATIVAS\SISTEMA_ACUMULATIVAS.csproj", "{2153B9A9-78B2-427C-B9D3-5808E7894504}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2153B9A9-78B2-427C-B9D3-5808E7894504}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2153B9A9-78B2-427C-B9D3-5808E7894504}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2153B9A9-78B2-427C-B9D3-5808E7894504}.Debug|x64.ActiveCfg = Debug|x64
+		{2153B9A9-78B2-427C-B9D3-5808E7894504}.Debug|x64.Build.0 = Debug|x64
+		{2153B9A9-78B2-427C-B9D3-5808E7894504}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2153B9A9-78B2-427C-B9D3-5808E7894504}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2153B9A9-78B2-427C-B9D3-5808E7894504}.Release|x64.ActiveCfg = Release|x64
+		{2153B9A9-78B2-427C-B9D3-5808E7894504}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7D19DBD1-B227-46BA-8220-64D729D87279}
+	EndGlobalSection
+EndGlobal

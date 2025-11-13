@@ -1,0 +1,83 @@
+﻿<Window x:Class="SISTEMA_ACUMULATIVAS.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS"
+        mc:Ignorable="d"
+        Title="Sistema de Acumulados - Notaría" 
+        Height="720" Width="1280"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
+
+    <Grid Background="#FFF0F4F8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#FF007BFF">
+            <Grid Margin="10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="ACUMULATIVAS NOTARÍA" 
+                               Foreground="White" FontSize="20" FontWeight="Bold"
+                               VerticalAlignment="Center" Margin="10,0"/>
+                    <TextBlock x:Name="txtNumeroNotaria" Text="Notaría No. [PENDIENTE]" 
+                               Foreground="#FFDDDDDD" FontSize="14"
+                               VerticalAlignment="Center" Margin="20,0,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Usuario:" Foreground="#FFDDDDDD" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="lblUsuarioActual" Text="Cargando..." 
+                               Foreground="White" FontWeight="Bold" 
+                               Margin="5,0,15,0" VerticalAlignment="Center"/>
+                    <Button x:Name="btnCerrarSesion" Content="Cerrar Sesión"
+                            Background="#FF0056b3" Foreground="White"
+                            BorderThickness="0" Padding="10,5" Cursor="Hand"
+                            Click="btnCerrarSesion_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" Margin="10" Style="{StaticResource CustomTabControlStyle}">
+
+            <TabItem Header=" Clientes ">
+                <Grid Background="White">
+                    <TextBlock Text="Aquí irá el módulo de CLIENTES (CRUD)" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header=" Operaciones ">
+                <Grid Background="White">
+                    <TextBlock Text="Aquí irá el módulo de OPERACIONES" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header=" Acumulados y Alertas ">
+                <Grid Background="White">
+                    <TextBlock Text="Aquí irá el Dashboard y el DataGrid de ACUMULADOS" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header=" Reportes UIF (XML) ">
+                <Grid Background="White">
+                    <TextBlock Text="Aquí irá el módulo de REPORTES XML" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16"/>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+
+        <Border Grid.Row="2" Background="#FF007BFF">
+            <TextBlock x:Name="lblConexion" Text="Estado de Conexión: OK" 
+                       Foreground="White" Margin="10,0" VerticalAlignment="Center"/>
+        </Border>
+    </Grid>
+</Window>
