@@ -17,6 +17,11 @@ namespace SISTEMA_ACUMULATIVAS
         {
             base.OnStartup(e);
 
+            // --- CAMBIO 1: EVITAR CIERRE PREMATURO ---
+            // Le decimos a la App: "No te cierres hasta que yo llame a Shutdown()"
+            // Esto evita que el cierre de LoginWindow mate la aplicación.
+            Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             LoginWindow loginWindow = new LoginWindow();
 
             // Mostramos el Login como un diálogo
@@ -25,6 +30,8 @@ namespace SISTEMA_ACUMULATIVAS
             // Si el usuario se logueó con éxito (DialogResult == true)
             if (dialogResult.HasValue && dialogResult.Value)
             {
+                // (El MessageBox de prueba ya no es necesario)
+
                 // Abrimos la ventana principal del programa
                 MainWindow mainWindow = new MainWindow(); // Este será nuestro dashboard
 
@@ -34,10 +41,15 @@ namespace SISTEMA_ACUMULATIVAS
                 this.MainWindow = mainWindow;
 
                 mainWindow.Show();
+
+                // --- CAMBIO 2: RESTAURAR CIERRE NORMAL ---
+                // Ahora que MainWindow es la jefa, volvemos al modo normal:
+                // "Ciérrate cuando el usuario cierre esta (MainWindow)".
+                Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
             }
             else
             {
-                // Si el usuario cerró el login, terminamos la aplicación
+                // Si el login falló (el usuario cerró), apagamos explícitamente.
                 Application.Current.Shutdown();
             }
         }

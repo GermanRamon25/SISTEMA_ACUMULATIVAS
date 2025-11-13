@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SISTEMA_ACUMULATIVAS.Conexion;
 
 namespace SISTEMA_ACUMULATIVAS.Conexion
 {
