@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS"
-        mc:Ignorable="d"
+        xmlns:views="clr-namespace:SISTEMA_ACUMULATIVAS.Views"  mc:Ignorable="d"
         Title="Sistema de Acumulados - Notaría" 
         Height="720" Width="1280"
         WindowStartupLocation="CenterScreen"
@@ -50,9 +50,7 @@
         <TabControl Grid.Row="1" Margin="10" Style="{StaticResource CustomTabControlStyle}">
 
             <TabItem Header=" Clientes ">
-                <Grid Background="White">
-                    <TextBlock Text="Aquí irá el módulo de CLIENTES (CRUD)" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16"/>
-                </Grid>
+                <views:ClienteView />
             </TabItem>
 
             <TabItem Header=" Operaciones ">
