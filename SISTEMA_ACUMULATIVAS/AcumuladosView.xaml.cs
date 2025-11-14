@@ -19,7 +19,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
         // Gráfico de Pastel (Tipos)
         public SeriesCollection SeriesTipoOperacion { get; set; }
-
+        
 
         public AcumuladosView()
         {

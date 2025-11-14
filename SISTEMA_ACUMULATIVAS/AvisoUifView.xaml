@@ -1,5 +1,4 @@
-﻿
-<UserControl x:Class="SISTEMA_ACUMULATIVAS.Views.AvisoUifView"
+﻿<UserControl x:Class="SISTEMA_ACUMULATIVAS.Views.AvisoUifView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -20,8 +19,9 @@
                 <TextBlock DockPanel.Dock="Top" Text="Operaciones a Incluir en el Aviso" 
                            FontSize="18" FontWeight="Bold" Foreground="#FF007BFF" Margin="0,0,0,10"/>
 
+                <!-- CORREGIDO (Línea 24) -->
                 <TextBlock DockPanel.Dock="Top" Text="Clientes que superaron el Umbral de Aviso (16,050 UMAs) en el periodo seleccionado." 
-                           Foreground="#FF555" Margin="0,0,0,15"/>
+                           Foreground="#FF555555" Margin="0,0,0,15"/>
 
                 <DataGrid x:Name="dgOperacionesAviso" AutoGenerateColumns="False" IsReadOnly="True">
                     <DataGrid.Columns>
@@ -50,11 +50,11 @@
                     </Grid.ColumnDefinitions>
 
                     <ComboBox x:Name="cmbMes" Grid.Column="0" Padding="5" Margin="0,0,5,0">
-                        
+                        <!-- Llenaremos esto con C# -->
                     </ComboBox>
 
                     <ComboBox x:Name="cmbAnio" Grid.Column="1" Padding="5" Margin="5,0,0,0">
-                     
+                        <!-- Llenaremos esto con C# -->
                     </ComboBox>
                 </Grid>
 
@@ -70,10 +70,12 @@
 
                 <!-- Consola de Estatus -->
                 <TextBlock Text="Estatus:" FontWeight="SemiBold"/>
-                <Border Background="#FF333" CornerRadius="5" Height="200" Padding="10">
+                <!-- CORREGIDO (Línea 73) -->
+                <Border Background="#FF333333" CornerRadius="5" Height="200" Padding="10">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <!-- CORREGIDO (Línea 76) -->
                         <TextBlock x:Name="txtLog" Text="Esperando acciones..." 
-                                   Foreground="#FFDDD" FontFamily="Consolas" TextWrapping="Wrap"/>
+                                   Foreground="#FFDDDDDD" FontFamily="Consolas" TextWrapping="Wrap"/>
                     </ScrollViewer>
                 </Border>
 

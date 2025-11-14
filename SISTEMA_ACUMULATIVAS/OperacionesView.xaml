@@ -45,13 +45,13 @@
                     <ComboBox x:Name="cmbCliente" Margin="0,5,0,10" Padding="5"
                               DisplayMemberPath="Nombre" SelectedValuePath="Id"/>
 
-                    <TextBlock Text="Tipo de Operación (LFPIORPI Art. 17):" FontWeight="SemiBold"/>
                     <ComboBox x:Name="cmbTipoOperacion" Margin="0,5,0,10" Padding="5">
-                        <ComboBoxItem Content="Operaciones sobre Inmuebles"/>
-                        <ComboBoxItem Content="Poderes Irrevocables"/>
-                        <ComboBoxItem Content="Constitución de Sociedades"/>
-                        <ComboBoxItem Content="Modificación de Sociedades"/>
-                        <ComboBoxItem Content="Contratos de Mutuo o Crédito"/>
+                        <ComboBoxItem Content="Transmisión o constitución de derechos reales sobre inmuebles. 8000 UMA;"/>
+                        <ComboBoxItem Content="Constitución de personas morales."/>
+                        <ComboBoxItem Content="Modificación patrimonial derivada de aumento o disminución de capital social."/>
+                        <ComboBoxItem Content="Fusión o escisión de sociedades."/>
+                        <ComboBoxItem Content="Compraventa de acciones."/>
+                        <ComboBoxItem Content="Constitución o modificación de fideicomisos. 4000 UMA."/>
                         <ComboBoxItem Content="Otra Actividad Vulnerable"/>
                     </ComboBox>
 
