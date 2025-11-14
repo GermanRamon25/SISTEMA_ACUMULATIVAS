@@ -1,0 +1,90 @@
+﻿<UserControl x:Class="SISTEMA_ACUMULATIVAS.Views.OperacionesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="1200"
+             Background="#FFF0F4F8" Loaded="UserControl_Loaded">
+
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="10">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Operaciones Registradas" 
+                           FontSize="18" FontWeight="Bold" Foreground="#FF007BFF" Margin="0,0,0,10"/>
+
+                <DataGrid x:Name="dgOperaciones" AutoGenerateColumns="False" 
+                          IsReadOnly="True" SelectionMode="Single"
+                          SelectionChanged="dgOperaciones_SelectionChanged">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Folio" Binding="{Binding FolioEscritura}" Width="100"/>
+                        <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNombre}" Width="*"/>
+                        <DataGridTextColumn Header="Tipo Operación" Binding="{Binding TipoOperacion}" Width="150"/>
+                        <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat='C'}" Width="120"/>
+                        <DataGridTextColumn Header="Fecha" Binding="{Binding FechaOperacion, StringFormat='dd/MM/yyyy'}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+
+        <GridSplitter Grid.Column="0" Width="5" HorizontalAlignment="Right" Background="Transparent"/>
+
+        <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="FormularioOperacion">
+                    <TextBlock Text="Registrar Operación" FontSize="18" FontWeight="Bold" 
+                               Foreground="#FF007BFF" Margin="0,0,0,20"/>
+
+                    <TextBlock Text="Cliente:" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="cmbCliente" Margin="0,5,0,10" Padding="5"
+                              DisplayMemberPath="Nombre" SelectedValuePath="Id"/>
+
+                    <TextBlock Text="Tipo de Operación (LFPIORPI Art. 17):" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="cmbTipoOperacion" Margin="0,5,0,10" Padding="5">
+                        <ComboBoxItem Content="Operaciones sobre Inmuebles"/>
+                        <ComboBoxItem Content="Poderes Irrevocables"/>
+                        <ComboBoxItem Content="Constitución de Sociedades"/>
+                        <ComboBoxItem Content="Modificación de Sociedades"/>
+                        <ComboBoxItem Content="Contratos de Mutuo o Crédito"/>
+                        <ComboBoxItem Content="Otra Actividad Vulnerable"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Monto de la Operación:" FontWeight="SemiBold"/>
+                    <TextBox x:Name="txtMonto" Margin="0,5,0,10" Padding="5"
+                             PreviewTextInput="txtMonto_PreviewTextInput"/>
+
+                    <TextBlock Text="Fecha de Operación:" FontWeight="SemiBold"/>
+                    <DatePicker x:Name="dpFechaOperacion" Margin="0,5,0,10" Padding="5"/>
+
+                    <TextBlock Text="Folio de Escritura:" FontWeight="SemiBold"/>
+                    <TextBox x:Name="txtFolioEscritura" Margin="0,5,0,10" Padding="5"/>
+
+                    <TextBlock Text="Descripción (Opcional):" FontWeight="SemiBold"/>
+                    <TextBox x:Name="txtDescripcion" Height="60" TextWrapping="Wrap" 
+                             AcceptsReturn="True" Margin="0,5,0,20" Padding="5"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button x:Name="btnNuevo" Content="Nuevo" 
+                                Background="#FF007BFF" Foreground="White"
+                                Height="35" Margin="5" Click="btnNuevo_Click"/>
+
+                        <Button x:Name="btnGuardar" Content="Guardar" 
+                                Grid.Column="1" Background="#FF28A745" Foreground="White"
+                                Height="35" Margin="5" Click="btnGuardar_Click"/>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

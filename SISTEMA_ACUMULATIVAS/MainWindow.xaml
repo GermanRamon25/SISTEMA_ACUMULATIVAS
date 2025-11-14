@@ -54,18 +54,15 @@
             </TabItem>
 
             <TabItem Header=" Operaciones ">
-                <Grid Background="White">
-                    <TextBlock Text="Aquí irá el módulo de OPERACIONES" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16"/>
-                </Grid>
+                <views:OperacionesView />
             </TabItem>
 
             <TabItem Header=" Acumulados y Alertas ">
-                <Grid Background="White">
-                    <TextBlock Text="Aquí irá el Dashboard y el DataGrid de ACUMULADOS" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16"/>
-                </Grid>
+                <views:AcumuladosView />
             </TabItem>
+        
 
-            <TabItem Header=" Reportes UIF (XML) ">
+            <TabItem Header=" Aviso UIF ">
                 <Grid Background="White">
                     <TextBlock Text="Aquí irá el módulo de REPORTES XML" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16"/>
                 </Grid>

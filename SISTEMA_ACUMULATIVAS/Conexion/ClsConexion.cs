@@ -19,21 +19,6 @@ namespace SISTEMA_ACUMULATIVAS.Conexion
             try
             {
                 conn.Open();
-
-                // Lógica de auditoría para los Triggers (sigue igual)
-                if (ClsSesion.UsuarioId != 0)
-                {
-                    using (SqlCommand cmd = new SqlCommand("sp_set_context_info", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-
-                        byte[] contextData = new byte[4];
-                        BitConverter.GetBytes(ClsSesion.UsuarioId).CopyTo(contextData, 0);
-
-                        cmd.Parameters.AddWithValue("@info", contextData);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
                 return conn;
             }
             catch (Exception ex)
