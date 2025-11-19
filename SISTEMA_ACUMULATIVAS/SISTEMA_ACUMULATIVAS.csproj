@@ -93,6 +93,7 @@
     <Compile Include="Models\Acumulado.cs" />
     <Compile Include="Models\Cliente.cs" />
     <Compile Include="Models\Operacion.cs" />
+    <Compile Include="Models\ReporteAviso.cs" />
     <Compile Include="OperacionesView.xaml.cs">
       <DependentUpon>OperacionesView.xaml</DependentUpon>
     </Compile>

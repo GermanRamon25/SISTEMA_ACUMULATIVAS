@@ -5,81 +5,115 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="1200"
+             d:DesignHeight="700" d:DesignWidth="1200"
              Background="#FFF0F4F8" Loaded="UserControl_Loaded">
 
     <Grid Margin="10">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="1*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="15" Margin="0,0,5,0">
+        <Border Grid.Row="0" Background="White" CornerRadius="5" Padding="15" Margin="0,0,0,10">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Operaciones a Incluir en el Aviso" 
-                           FontSize="18" FontWeight="Bold" Foreground="#FF007BFF" Margin="0,0,0,10"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <TextBlock Text="Periodo a Revisar:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                    <ComboBox x:Name="cmbMes" Width="150" Padding="5" Margin="0,0,5,0"/>
+                    <ComboBox x:Name="cmbAnio" Width="100" Padding="5"/>
 
-                <!-- CORREGIDO (Línea 24) -->
-                <TextBlock DockPanel.Dock="Top" Text="Clientes que superaron el Umbral de Aviso (16,050 UMAs) en el periodo seleccionado." 
-                           Foreground="#FF555555" Margin="0,0,0,15"/>
+                    <Button x:Name="btnBuscar" Content="🔍 Buscar Avisos" 
+                            Margin="15,0,0,0" Padding="15,5" Background="#FF007BFF" Foreground="White"
+                            FontWeight="Bold" BorderThickness="0" Click="btnBuscar_Click"/>
+                </StackPanel>
 
-                <DataGrid x:Name="dgOperacionesAviso" AutoGenerateColumns="False" IsReadOnly="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNombre}" Width="*"/>
-                        <DataGridTextColumn Header="Operación" Binding="{Binding TipoOperacion}" Width="150"/>
-                        <DataGridTextColumn Header="Folio" Binding="{Binding FolioEscritura}" Width="100"/>
-                        <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat='C'}" Width="130"/>
-                        <DataGridTextColumn Header="Fecha" Binding="{Binding FechaOperacion, StringFormat='dd/MM/yyyy'}" Width="100"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Button x:Name="btnImprimir" Content="🖨️ Imprimir Ficha Seleccionada" DockPanel.Dock="Right"
+                        Padding="15,5" Background="#FF28A745" Foreground="White"
+                        FontWeight="Bold" BorderThickness="0" Click="btnImprimir_Click" IsEnabled="False"/>
             </DockPanel>
         </Border>
 
-        <GridSplitter Grid.Column="0" Width="5" HorizontalAlignment="Right" Background="Transparent"/>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.5*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="20">
-            <StackPanel>
-                <TextBlock Text="Generar Aviso UIF" FontSize="18" FontWeight="Bold" 
-                           Foreground="#FF007BFF" Margin="0,0,0,20"/>
+            <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="10" Margin="0,0,5,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Clientes Sujetos a Aviso" 
+                               FontSize="16" FontWeight="Bold" Foreground="#FFDC3545" Margin="0,0,0,10"/>
 
-                <TextBlock Text="Periodo de Reporte:" FontWeight="SemiBold"/>
-                <Grid Margin="0,5,0,20">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                    <TextBlock DockPanel.Dock="Top" Text="Seleccione un cliente para ver su desglose." 
+                               FontSize="12" Foreground="Gray" Margin="0,0,0,10"/>
 
-                    <ComboBox x:Name="cmbMes" Grid.Column="0" Padding="5" Margin="0,0,5,0">
-                        <!-- Llenaremos esto con C# -->
-                    </ComboBox>
+                    <DataGrid x:Name="dgClientesAviso" AutoGenerateColumns="False" IsReadOnly="True" 
+                              SelectionMode="Single" SelectionChanged="dgClientesAviso_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Cliente" Binding="{Binding NombreCliente}" Width="*"/>
+                            <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotalAcumulado, StringFormat=C}" Width="120"/>
+                            <DataGridTextColumn Header="Motivo" Binding="{Binding MotivoAviso}" Width="140"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
 
-                    <ComboBox x:Name="cmbAnio" Grid.Column="1" Padding="5" Margin="5,0,0,0">
-                        <!-- Llenaremos esto con C# -->
-                    </ComboBox>
-                </Grid>
+            <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="20" Margin="5,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <StackPanel x:Name="PanelFicha" Visibility="Hidden">
+                            <Border BorderBrush="#FF007BFF" BorderThickness="0,0,0,2" Padding="0,0,0,10" Margin="0,0,0,20">
+                                <DockPanel>
+                                    <TextBlock Text="FICHA INFORMATIVA DE OPERACIÓN VULNERABLE" 
+                                               FontSize="18" FontWeight="Bold" Foreground="#FF333333" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
 
-                <!-- Botón de Cargar -->
-                <Button x:Name="btnCargarOperaciones" Content="Cargar Operaciones del Periodo" 
-                        Background="#FF007BFF" Foreground="White"
-                        Height="35" Margin="0,0,0,20" Click="btnCargarOperaciones_Click"/>
+                            <Grid Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                <!-- Botón de Generar XML -->
-                <Button x:Name="btnGenerarXml" Content="Generar y Guardar XML" 
-                        Background="#FF17A2B8" Foreground="White"
-                        Height="45" Margin="0,10,0,20" FontWeight="Bold" Click="btnGenerarXml_Click" IsEnabled="False"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Cliente:" FontWeight="Bold" Margin="0,0,10,5"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="lblClienteNombre" Text="Juan Perez" Margin="0,0,0,5"/>
 
-                <!-- Consola de Estatus -->
-                <TextBlock Text="Estatus:" FontWeight="SemiBold"/>
-                <!-- CORREGIDO (Línea 73) -->
-                <Border Background="#FF333333" CornerRadius="5" Height="200" Padding="10">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <!-- CORREGIDO (Línea 76) -->
-                        <TextBlock x:Name="txtLog" Text="Esperando acciones..." 
-                                   Foreground="#FFDDDDDD" FontFamily="Consolas" TextWrapping="Wrap"/>
-                    </ScrollViewer>
-                </Border>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="RFC:" FontWeight="Bold" Margin="0,0,10,5"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="lblClienteRFC" Text="XAXX010101000" Margin="0,0,0,5"/>
 
-            </StackPanel>
-        </Border>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Total Acumulado:" FontWeight="Bold" Margin="0,0,10,5"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="lblTotalMonto" Text="$1,650,000.00" FontWeight="Bold" Foreground="#FFDC3545" Margin="0,0,0,5"/>
+                            </Grid>
+
+                            <TextBlock Text="Desglose de Operaciones (Periodo Acumulación)" FontSize="14" FontWeight="SemiBold" 
+                                       Foreground="#FF007BFF" Margin="0,0,0,10"/>
+
+                            <DataGrid x:Name="dgDetalleOperaciones" AutoGenerateColumns="False" IsReadOnly="True" 
+                                      BorderThickness="1" BorderBrush="#FFDDDDDD" HeadersVisibility="Column">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Fecha" Binding="{Binding FechaOperacion, StringFormat=dd/MM/yyyy}" Width="90"/>
+                                    <DataGridTextColumn Header="Folio" Binding="{Binding FolioEscritura}" Width="80"/>
+                                    <DataGridTextColumn Header="Tipo de Operación" Binding="{Binding TipoOperacion}" Width="*"/>
+                                    <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Border Background="#FFF9F9F9" BorderBrush="#FFDDDDDD" BorderThickness="1" Margin="0,20,0,0" Padding="10">
+                                <TextBlock Text="Nota Interna: Esta información debe ser verificada antes de su captura en el portal SPPLD. El monto supera el umbral de aviso establecido en la LFPIORPI." 
+                                           TextWrapping="Wrap" FontStyle="Italic" Foreground="Gray"/>
+                            </Border>
+
+                        </StackPanel>
+
+                        <TextBlock x:Name="txtInstruccion" Text="&lt; Seleccione un cliente de la izquierda para ver su Ficha." 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFAAAAAA" FontSize="16" Margin="0,50,0,0"/>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>
