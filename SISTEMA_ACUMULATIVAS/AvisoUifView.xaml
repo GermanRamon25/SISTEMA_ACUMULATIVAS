@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS.Views"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
              Background="#FFF0F4F8" Loaded="UserControl_Loaded">
@@ -26,7 +26,7 @@
                             FontWeight="Bold" BorderThickness="0" Click="btnBuscar_Click"/>
                 </StackPanel>
 
-                <Button x:Name="btnImprimir" Content="🖨️ Imprimir Ficha Seleccionada" DockPanel.Dock="Right"
+                <Button x:Name="btnImprimir" Content="🖨️ Imprimir Ficha" DockPanel.Dock="Right"
                         Padding="15,5" Background="#FF28A745" Foreground="White"
                         FontWeight="Bold" BorderThickness="0" Click="btnImprimir_Click" IsEnabled="False"/>
             </DockPanel>
@@ -42,10 +42,6 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Clientes Sujetos a Aviso" 
                                FontSize="16" FontWeight="Bold" Foreground="#FFDC3545" Margin="0,0,0,10"/>
-
-                    <TextBlock DockPanel.Dock="Top" Text="Seleccione un cliente para ver su desglose." 
-                               FontSize="12" Foreground="Gray" Margin="0,0,0,10"/>
-
                     <DataGrid x:Name="dgClientesAviso" AutoGenerateColumns="False" IsReadOnly="True" 
                               SelectionMode="Single" SelectionChanged="dgClientesAviso_SelectionChanged">
                         <DataGrid.Columns>
@@ -57,62 +53,13 @@
                 </DockPanel>
             </Border>
 
-            <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="20" Margin="5,0,0,0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <Grid>
-                        <StackPanel x:Name="PanelFicha" Visibility="Hidden">
-                            <Border BorderBrush="#FF007BFF" BorderThickness="0,0,0,2" Padding="0,0,0,10" Margin="0,0,0,20">
-                                <DockPanel>
-                                    <TextBlock Text="FICHA INFORMATIVA DE OPERACIÓN VULNERABLE" 
-                                               FontSize="18" FontWeight="Bold" Foreground="#FF333333" VerticalAlignment="Center"/>
-                                </DockPanel>
-                            </Border>
-
-                            <Grid Margin="0,0,0,20">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Cliente:" FontWeight="Bold" Margin="0,0,10,5"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="lblClienteNombre" Text="Juan Perez" Margin="0,0,0,5"/>
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="RFC:" FontWeight="Bold" Margin="0,0,10,5"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="lblClienteRFC" Text="XAXX010101000" Margin="0,0,0,5"/>
-
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Total Acumulado:" FontWeight="Bold" Margin="0,0,10,5"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="lblTotalMonto" Text="$1,650,000.00" FontWeight="Bold" Foreground="#FFDC3545" Margin="0,0,0,5"/>
-                            </Grid>
-
-                            <TextBlock Text="Desglose de Operaciones (Periodo Acumulación)" FontSize="14" FontWeight="SemiBold" 
-                                       Foreground="#FF007BFF" Margin="0,0,0,10"/>
-
-                            <DataGrid x:Name="dgDetalleOperaciones" AutoGenerateColumns="False" IsReadOnly="True" 
-                                      BorderThickness="1" BorderBrush="#FFDDDDDD" HeadersVisibility="Column">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Fecha" Binding="{Binding FechaOperacion, StringFormat=dd/MM/yyyy}" Width="90"/>
-                                    <DataGridTextColumn Header="Folio" Binding="{Binding FolioEscritura}" Width="80"/>
-                                    <DataGridTextColumn Header="Tipo de Operación" Binding="{Binding TipoOperacion}" Width="*"/>
-                                    <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C}" Width="100"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-
-                            <Border Background="#FFF9F9F9" BorderBrush="#FFDDDDDD" BorderThickness="1" Margin="0,20,0,0" Padding="10">
-                                <TextBlock Text="Nota Interna: Esta información debe ser verificada antes de su captura en el portal SPPLD. El monto supera el umbral de aviso establecido en la LFPIORPI." 
-                                           TextWrapping="Wrap" FontStyle="Italic" Foreground="Gray"/>
-                            </Border>
-
-                        </StackPanel>
-
-                        <TextBlock x:Name="txtInstruccion" Text="&lt; Seleccione un cliente de la izquierda para ver su Ficha." 
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFAAAAAA" FontSize="16" Margin="0,50,0,0"/>
-                    </Grid>
-                </ScrollViewer>
+            <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="0" Margin="5,0,0,0" ClipToBounds="True">
+                <Grid>
+                    <wv2:WebView2 x:Name="webView" Visibility="Hidden"/>
+                    <TextBlock x:Name="txtInstruccion" Text="&lt; Seleccione un cliente para generar la Ficha." 
+                               HorizontalAlignment="Center" VerticalAlignment="Center" 
+                               Foreground="#FFAAAAAA" FontSize="16"/>
+                </Grid>
             </Border>
         </Grid>
     </Grid>
