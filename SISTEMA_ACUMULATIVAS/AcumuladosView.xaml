@@ -1,6 +1,4 @@
-﻿<!-- Archivo: AcumuladosView.xaml (MODIFICADO) -->
-
-<UserControl x:Class="SISTEMA_ACUMULATIVAS.Views.AcumuladosView"
+﻿<UserControl x:Class="SISTEMA_ACUMULATIVAS.Views.AcumuladosView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -9,56 +7,64 @@
              xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
-             Background="#FFF0F4F8">
-
+             Background="#FFF0F4F8"
+             Loaded="UserControl_Loaded">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Fila para Umbrales -->
             <RowDefinition Height="2*"/>
-            <!-- Fila para Gráficos -->
             <RowDefinition Height="3*"/>
-            <!-- Fila para Alertas (DataGrid) -->
         </Grid.RowDefinitions>
 
-        <!-- ==================== 1. UMBRAL DE LEY (MODIFICADO) ==================== -->
-        <Border Grid.Row="0" Background="White" CornerRadius="5" Padding="15" Margin="0,0,0,10">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <StackPanel.Resources>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="VerticalAlignment" Value="Center"/>
-                    </Style>
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="15">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <StackPanel.Resources>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                        </Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Margin" Value="15,0"/>
+                            <Setter Property="Padding" Value="20,10"/>
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </StackPanel.Resources>
+
+                    <TextBlock Text="Umbrales (UMA 2025: $113.14)" FontSize="14" FontWeight="Bold" Foreground="#FF007BFF"/>
+
+                    <Border Background="#FFFFF3CD" BorderBrush="#FFEEBA00" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="ALERTA (IDENTIFICACIÓN / AVISO)" FontSize="10" FontWeight="Bold" Foreground="#664D00"/>
+                            <TextBlock Text="8,000 UMAs" FontSize="16" FontWeight="Bold" Foreground="#664D00" HorizontalAlignment="Center"/>
+                            <TextBlock Text="$905,120.00 MXN" FontSize="12" Foreground="#664D00" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <Button Grid.Column="1" x:Name="btnActualizar" Content="🔄 Actualizar" 
+                    Margin="10,0,0,0" Padding="15,0" Background="#FF007BFF" Foreground="White"
+                    FontWeight="Bold" BorderThickness="0" Cursor="Hand"
+                    Click="btnActualizar_Click">
+                <Button.Resources>
                     <Style TargetType="Border">
-                        <Setter Property="Margin" Value="15,0"/>
-                        <Setter Property="Padding" Value="20,10"/>
                         <Setter Property="CornerRadius" Value="5"/>
                     </Style>
-                </StackPanel.Resources>
+                </Button.Resources>
+            </Button>
+        </Grid>
 
-                <TextBlock Text="Umbrales (UMA 2025: $113.14)" FontSize="14" FontWeight="Bold" Foreground="#FF007BFF"/>
-
-                <!-- RECUADRO MODIFICADO A 8,000 UMAs -->
-                <Border Background="#FFFFF3CD" BorderBrush="#FFEEBA00" BorderThickness="1">
-                    <StackPanel>
-                        <TextBlock Text="ALERTA (IDENTIFICACIÓN / AVISO)" FontSize="10" FontWeight="Bold" Foreground="#664D00"/>
-                        <TextBlock Text="8,000 UMAs" FontSize="16" FontWeight="Bold" Foreground="#664D00" HorizontalAlignment="Center"/>
-                        <TextBlock Text="$905,120.00 MXN" FontSize="12" Foreground="#664D00" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- RECUADRO DE 16,050 UMAs ELIMINADO -->
-
-            </StackPanel>
-        </Border>
-
-        <!-- ==================== 2. DASHBOARD INTERACTIVO (Gráficos) ==================== -->
         <Grid Grid.Row="1" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Gráfico de Barras -->
             <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="15" Margin="0,0,5,0">
                 <Grid>
                     <TextBlock Text="Top 10 Clientes por Acumulado (Últimos 6 Meses)" FontSize="16" FontWeight="Bold" 
@@ -66,7 +72,7 @@
 
                     <lvc:CartesianChart Series="{Binding SeriesClientes}" LegendLocation="Bottom" Margin="0,30,0,0">
                         <lvc:CartesianChart.AxisY>
-                            <lvc:Axis Title="Monto Acumulado ($)"/>
+                            <lvc:Axis Title="Monto Acumulado ($)" LabelFormatter="{Binding Formatter}"/>
                         </lvc:CartesianChart.AxisY>
                         <lvc:CartesianChart.AxisX>
                             <lvc:Axis Title="Cliente" Labels="{Binding LabelsClientes}"/>
@@ -75,7 +81,6 @@
                 </Grid>
             </Border>
 
-            <!-- Gráfico de Pastel -->
             <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="15" Margin="5,0,0,0">
                 <Grid>
                     <TextBlock Text="Operaciones por Tipo" FontSize="16" FontWeight="Bold" 
@@ -86,7 +91,6 @@
             </Border>
         </Grid>
 
-        <!-- ==================== 3. ALERTAS DE ACUMULACIÓN (DataGrid) ==================== -->
         <Border Grid.Row="2" Background="White" CornerRadius="5" Padding="15">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Alertas de Acumulación (Clientes cerca del Umbral de Aviso)" 
@@ -96,10 +100,26 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNombre}" Width="*"/>
                         <DataGridTextColumn Header="Acumulado (6 Meses)" Binding="{Binding MontoAcumulado, StringFormat=C}" Width="180"/>
-
-                        <DataGridTextColumn Header="% del Umbral de Aviso" Binding="{Binding PorcentajeUmbral, StringFormat={}{0:P0}}" Width="180"/>
-
-                        <DataGridTextColumn Header="Estado" Binding="{Binding EstadoAlerta}" Width="150"/>
+                        <DataGridTextColumn Header="% del Umbral" Binding="{Binding PorcentajeUmbral, StringFormat={}{0:P0}}" Width="120"/>
+                        <DataGridTextColumn Header="Estado" Binding="{Binding EstadoAlerta}" Width="180">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding EstadoAlerta}" Value="⚠️ UMBRAL ALCANZADO">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding EstadoAlerta}" Value="Cerca del Límite">
+                                            <Setter Property="Foreground" Value="Orange"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding EstadoAlerta}" Value="Normal">
+                                            <Setter Property="Foreground" Value="Green"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Última Actualización" Binding="{Binding UltimaActualizacion, StringFormat='dd/MM/yyyy HH:mm'}" Width="150"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </DockPanel>

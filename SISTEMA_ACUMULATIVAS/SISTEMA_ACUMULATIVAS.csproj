@@ -90,7 +90,9 @@
     <Compile Include="ClienteView.xaml.cs">
       <DependentUpon>ClienteView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\Acumulado.cs" />
     <Compile Include="Models\Cliente.cs" />
+    <Compile Include="Models\Operacion.cs" />
     <Compile Include="OperacionesView.xaml.cs">
       <DependentUpon>OperacionesView.xaml</DependentUpon>
     </Compile>
