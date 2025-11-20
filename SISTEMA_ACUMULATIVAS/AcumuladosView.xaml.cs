@@ -8,6 +8,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace SISTEMA_ACUMULATIVAS.Views
 {
@@ -18,42 +19,42 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
         private ClsConexion _conexion;
 
+        // Propiedades Gráfico 1 (Columnas - Montos)
         public SeriesCollection SeriesClientes { get; set; }
         public string[] LabelsClientes { get; set; }
-        public SeriesCollection SeriesTipoOperacion { get; set; }
         public Func<double, string> Formatter { get; set; }
+
+        // Propiedades Gráfico 2 (Filas - Tipos de Operación)
+        public SeriesCollection SeriesTipoOperacion { get; set; }
+        public string[] LabelsTipos { get; set; } // NUEVO: Etiquetas para el eje Y
+        public Func<double, string> FormatterCantidad { get; set; } // NUEVO: Formato entero
 
         public AcumuladosView()
         {
             InitializeComponent();
             _conexion = new ClsConexion();
-            Formatter = value => value.ToString("C");
+            Formatter = value => value.ToString("C0"); // Moneda
+            FormatterCantidad = value => value.ToString("N0"); // Números enteros
             DataContext = this;
-
-            // NOTA: Ya no cargamos datos aquí en el constructor.
-            // Esperamos al evento 'Loaded' para que se refresque siempre.
         }
 
-        // ESTE ES EL EVENTO MÁGICO
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Se ejecuta cada vez que haces clic en la pestaña
             CargarDashboard();
         }
 
-        // EVENTO DEL BOTÓN MANUAL
         private void btnActualizar_Click(object sender, RoutedEventArgs e)
         {
             CargarDashboard();
-            MessageBox.Show("Datos actualizados correctamente.", "Refresco", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void CargarDashboard()
         {
             CargarTopClientesYAlertas();
-            CargarGraficoPastel();
+            CargarGraficoOperaciones(null);
         }
 
+        // --- 1. LÓGICA TABLA Y BARRAS (CLIENTES) ---
         private void CargarTopClientesYAlertas()
         {
             List<Acumulado> listaAcumulados = new List<Acumulado>();
@@ -63,10 +64,8 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    // Join para traer nombre del cliente
                     string query = @"
-                        SELECT TOP 20 
-                            c.Id, c.Nombre, a.TotalAcumulado, a.UltimaActualizacion
+                        SELECT TOP 20 c.Id, c.Nombre, a.TotalAcumulado, a.UltimaActualizacion
                         FROM Acumulados a
                         INNER JOIN Clientes c ON a.ClienteId = c.Id
                         WHERE a.TotalAcumulado > 0
@@ -80,10 +79,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                             {
                                 decimal total = (decimal)reader["TotalAcumulado"];
                                 double porcentaje = (double)(total / montoUmbral);
-                                string estado = "Normal";
-
-                                if (total >= montoUmbral) estado = "⚠️ UMBRAL ALCANZADO";
-                                else if (porcentaje > 0.8) estado = "Cerca del Límite";
+                                string estado = total >= montoUmbral ? "⚠️ UMBRAL ALCANZADO" : (porcentaje > 0.8 ? "Cerca del Límite" : "Normal");
 
                                 listaAcumulados.Add(new Acumulado
                                 {
@@ -101,64 +97,103 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                 dgAlertas.ItemsSource = listaAcumulados;
 
-                // Refrescar Gráfico de Barras
                 var top10 = listaAcumulados.Take(10).ToList();
                 SeriesClientes = new SeriesCollection
                 {
                     new ColumnSeries
                     {
-                        Title = "Monto Acumulado",
+                        Title = "Monto",
                         Values = new ChartValues<decimal>(top10.Select(x => x.MontoAcumulado)),
                         DataLabels = true,
-                        LabelPoint = point => point.Y.ToString("C0")
+                        LabelPoint = point => point.Y.ToString("C0"),
+                        Fill = System.Windows.Media.Brushes.DodgerBlue // Color profesional
                     }
                 };
                 LabelsClientes = top10.Select(x => x.ClienteNombre).ToArray();
 
-                // Forzar a la UI a notar el cambio de propiedades
                 DataContext = null;
                 DataContext = this;
             }
-            catch (Exception ex)
+            catch (Exception ex) { MessageBox.Show("Error carga: " + ex.Message); }
+        }
+
+        // --- 2. LÓGICA FILTRO ---
+        private void dgAlertas_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dgAlertas.SelectedItem is Acumulado seleccionado)
             {
-                MessageBox.Show("Error al cargar acumulados: " + ex.Message);
+                CargarGraficoOperaciones(seleccionado.ClienteId, seleccionado.ClienteNombre);
             }
         }
 
-        private void CargarGraficoPastel()
+        private void btnVerGlobal_Click(object sender, RoutedEventArgs e)
+        {
+            dgAlertas.SelectedItem = null;
+            CargarGraficoOperaciones(null);
+        }
+
+        // --- 3. LÓGICA GRÁFICO TIPOS (AHORA BARRAS HORIZONTALES) ---
+        private void CargarGraficoOperaciones(int? clienteId, string nombreCliente = "")
         {
             SeriesTipoOperacion = new SeriesCollection();
+            List<string> etiquetas = new List<string>();
+
             try
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    string query = @"
-                        SELECT TipoOperacion, COUNT(*) as Cantidad 
-                        FROM Operaciones 
-                        WHERE FechaOperacion >= DATEADD(MONTH, -6, GETDATE())
-                        GROUP BY TipoOperacion";
+                    string query = "";
+                    SqlCommand cmd = new SqlCommand();
+                    cmd.Connection = conn;
 
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    if (clienteId.HasValue)
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                string tipo = reader["TipoOperacion"].ToString();
-                                int cantidad = (int)reader["Cantidad"];
-                                string nombreCorto = tipo.Length > 15 ? tipo.Substring(0, 15) + "..." : tipo;
+                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad ASC"; // Orden ASC para que se vea de arriba a abajo en el gráfico
+                        cmd.Parameters.AddWithValue("@Id", clienteId.Value);
+                        txtTituloPastel.Text = $"Operaciones de: {nombreCliente}";
+                        btnVerGlobal.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad ASC";
+                        txtTituloPastel.Text = "Operaciones por Tipo (Global)";
+                        btnVerGlobal.Visibility = Visibility.Collapsed;
+                    }
 
-                                SeriesTipoOperacion.Add(new PieSeries
-                                {
-                                    Title = nombreCorto,
-                                    Values = new ChartValues<int> { cantidad },
-                                    DataLabels = true,
-                                    LabelPoint = chartPoint => string.Format("{0} ({1:P})", chartPoint.SeriesView.Title, chartPoint.Participation)
-                                });
-                            }
+                    cmd.CommandText = query;
+
+                    // Usamos una sola serie para todas las barras (mismo color)
+                    var valores = new ChartValues<int>();
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string tipo = reader["TipoOperacion"].ToString();
+                            // Recortar texto si es exageradamente largo (opcional)
+                            if (tipo.Length > 35) tipo = tipo.Substring(0, 35) + "...";
+
+                            etiquetas.Add(tipo);
+                            valores.Add((int)reader["Cantidad"]);
                         }
                     }
+
+                    // Configurar el gráfico de Filas
+                    SeriesTipoOperacion.Add(new RowSeries
+                    {
+                        Title = "Cantidad",
+                        Values = valores,
+                        DataLabels = true,
+                        LabelPoint = point => point.X.ToString("N0"), // Mostrar número entero
+                        Fill = (SolidColorBrush)new BrushConverter().ConvertFrom("#FF28A745"), // Verde profesional
+                        RowPadding = 10
+                    });
+
+                    LabelsTipos = etiquetas.ToArray();
                 }
+
+                DataContext = null;
+                DataContext = this;
             }
             catch { }
         }

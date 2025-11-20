@@ -1,5 +1,5 @@
 ﻿using SISTEMA_ACUMULATIVAS.Conexion;
-using SISTEMA_ACUMULATIVAS.Models; // Importante: Aquí están tus clases independientes
+using SISTEMA_ACUMULATIVAS.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -14,15 +14,17 @@ namespace SISTEMA_ACUMULATIVAS.Views
     public partial class OperacionesView : UserControl
     {
         private ClsConexion _conexion;
-
-        // CAMBIO: Ahora usamos la lista del Modelo oficial 'Operacion'
         private List<Operacion> _operacionesCache;
         private int _idOperacionSeleccionada = 0;
+
+        // Lista maestra para el buscador
+        private List<Cliente> _todosLosClientes;
 
         public OperacionesView()
         {
             InitializeComponent();
             _conexion = new ClsConexion();
+            _todosLosClientes = new List<Cliente>();
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -32,18 +34,14 @@ namespace SISTEMA_ACUMULATIVAS.Views
             LimpiarFormulario();
         }
 
-        // --- 1. LECTURA (READ) ---
-
+        // --- 1. CARGA DE DATOS ---
         private void CargarClientesEnComboBox()
         {
             try
             {
-                // CAMBIO: Usamos el modelo 'Cliente' existente en Models/Cliente.cs
-                List<Cliente> listaClientes = new List<Cliente>();
-
+                _todosLosClientes.Clear();
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    // Solo traemos ID y Nombre para ser eficientes, aunque la clase tenga más campos
                     string query = "SELECT Id, Nombre FROM Clientes WHERE Activo = 1 ORDER BY Nombre";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -51,18 +49,16 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         {
                             while (reader.Read())
                             {
-                                listaClientes.Add(new Cliente
+                                _todosLosClientes.Add(new Cliente
                                 {
                                     Id = (int)reader["Id"],
                                     Nombre = reader["Nombre"].ToString()
-                                    // El resto de propiedades (RFC, CURP) se quedan vacías o nulas, no importa aquí.
                                 });
                             }
                         }
                     }
                 }
-                // Asignamos la lista de objetos Cliente reales
-                cmbCliente.ItemsSource = listaClientes;
+                cmbCliente.ItemsSource = _todosLosClientes;
             }
             catch (Exception ex)
             {
@@ -70,9 +66,33 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
+        // --- ¡ESTA ES LA FUNCIÓN QUE FALTABA Y CAUSABA EL ERROR! ---
+        private void cmbCliente_KeyUp(object sender, KeyEventArgs e)
+        {
+            // Ignorar teclas de navegación
+            if (e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Enter || e.Key == Key.Tab)
+                return;
+
+            string textoBusqueda = cmbCliente.Text.ToUpper();
+
+            if (string.IsNullOrEmpty(textoBusqueda))
+            {
+                cmbCliente.ItemsSource = _todosLosClientes;
+                return;
+            }
+
+            // Filtro tipo Google
+            List<Cliente> filtrados = _todosLosClientes
+                .Where(c => c.Nombre.ToUpper().Contains(textoBusqueda))
+                .ToList();
+
+            cmbCliente.ItemsSource = filtrados;
+            cmbCliente.IsDropDownOpen = true;
+        }
+
+        // --- RESTO DEL CÓDIGO ---
         private void CargarOperacionesGrid()
         {
-            // CAMBIO: Usamos el nuevo modelo 'Operacion'
             _operacionesCache = new List<Operacion>();
             dgOperaciones.ItemsSource = null;
 
@@ -95,12 +115,11 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         {
                             while (reader.Read())
                             {
-                                // Llenamos el modelo independiente
                                 _operacionesCache.Add(new Operacion
                                 {
                                     Id = (int)reader["Id"],
                                     ClienteId = (int)reader["ClienteId"],
-                                    ClienteNombre = reader["ClienteNombre"].ToString(), // Propiedad Extra del modelo
+                                    ClienteNombre = reader["ClienteNombre"].ToString(),
                                     TipoOperacion = reader["TipoOperacion"].ToString(),
                                     Monto = (decimal)reader["Monto"],
                                     FechaOperacion = (DateTime)reader["FechaOperacion"],
@@ -119,15 +138,11 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- 2. GUARDADO (CREATE / UPDATE) ---
-        // (Este bloque es idéntico en lógica, solo cambia que usamos los modelos externos si fuera necesario pasar objetos)
-
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            // Validaciones
             if (cmbCliente.SelectedValue == null)
             {
-                MessageBox.Show("Debe seleccionar un Cliente.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Debe seleccionar un Cliente de la lista.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (cmbTipoOperacion.SelectedItem == null)
@@ -165,17 +180,17 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    EstablecerContextoUsuario(conn); // Auditoría
+                    EstablecerContextoUsuario(conn);
 
                     string query;
-                    if (_idOperacionSeleccionada == 0) // INSERT
+                    if (_idOperacionSeleccionada == 0)
                     {
                         query = @"INSERT INTO Operaciones 
                                   (ClienteId, TipoOperacion, Monto, FechaOperacion, FolioEscritura, Descripcion, UsuarioId) 
                                   VALUES 
                                   (@ClienteId, @Tipo, @Monto, @Fecha, @Folio, @Desc, @UsuarioId)";
                     }
-                    else // UPDATE
+                    else
                     {
                         query = @"UPDATE Operaciones SET 
                                   ClienteId=@ClienteId, TipoOperacion=@Tipo, Monto=@Monto, 
@@ -203,7 +218,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                 MessageBox.Show("Operación guardada exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 LimpiarFormulario();
-                CargarOperacionesGrid(); // Recargar tabla
+                CargarOperacionesGrid();
             }
             catch (Exception ex)
             {
@@ -222,16 +237,17 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- 3. EVENTOS UI ---
-
         private void dgOperaciones_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // CAMBIO: Casteamos al modelo 'Operacion' oficial
             if (dgOperaciones.SelectedItem is Operacion item)
             {
                 _idOperacionSeleccionada = item.Id;
 
+                // Cargar datos para edición
                 cmbCliente.SelectedValue = item.ClienteId;
+                // Forzamos que el texto se vea, ya que al ser editable a veces se limpia
+                cmbCliente.Text = item.ClienteNombre;
+
                 txtMonto.Text = item.Monto.ToString("0.00");
                 txtFolioEscritura.Text = item.FolioEscritura;
                 txtDescripcion.Text = item.Descripcion;
@@ -257,6 +273,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
         {
             _idOperacionSeleccionada = 0;
             cmbCliente.SelectedIndex = -1;
+            cmbCliente.Text = "";
+            if (_todosLosClientes != null) cmbCliente.ItemsSource = _todosLosClientes;
+
             cmbTipoOperacion.SelectedIndex = -1;
             txtMonto.Clear();
             txtFolioEscritura.Clear();

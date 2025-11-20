@@ -3,12 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS.Views"
              xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
-             Background="#FFF0F4F8"
-             Loaded="UserControl_Loaded">
+             Background="#FFF0F4F8" Loaded="UserControl_Loaded">
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,6 +15,7 @@
             <RowDefinition Height="3*"/>
         </Grid.RowDefinitions>
 
+        <!-- 1. ENCABEZADO -->
         <Grid Grid.Row="0" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -24,33 +24,19 @@
 
             <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="15">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <StackPanel.Resources>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                        </Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Margin" Value="15,0"/>
-                            <Setter Property="Padding" Value="20,10"/>
-                            <Setter Property="CornerRadius" Value="5"/>
-                        </Style>
-                    </StackPanel.Resources>
-
-                    <TextBlock Text="Umbrales (UMA 2025: $113.14)" FontSize="14" FontWeight="Bold" Foreground="#FF007BFF"/>
-
-                    <Border Background="#FFFFF3CD" BorderBrush="#FFEEBA00" BorderThickness="1">
+                    <TextBlock Text="Umbrales (UMA 2025: $113.14)" FontSize="14" FontWeight="Bold" Foreground="#FF007BFF" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                    <Border Background="#FFFFF3CD" BorderBrush="#FFEEBA00" BorderThickness="1" Padding="15,5" CornerRadius="5">
                         <StackPanel>
-                            <TextBlock Text="ALERTA (IDENTIFICACIÓN / AVISO)" FontSize="10" FontWeight="Bold" Foreground="#664D00"/>
-                            <TextBlock Text="8,000 UMAs" FontSize="16" FontWeight="Bold" Foreground="#664D00" HorizontalAlignment="Center"/>
-                            <TextBlock Text="$905,120.00 MXN" FontSize="12" Foreground="#664D00" HorizontalAlignment="Center"/>
+                            <TextBlock Text="ALERTA (IDENTIFICACIÓN)" FontSize="10" FontWeight="Bold" Foreground="#664D00"/>
+                            <TextBlock Text="8,000 UMAs ($905,120.00)" FontSize="14" FontWeight="Bold" Foreground="#664D00" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
             </Border>
 
-            <Button Grid.Column="1" x:Name="btnActualizar" Content="🔄 Actualizar" 
+            <Button Grid.Column="1" x:Name="btnActualizar" Content="🔄 Actualizar Datos" 
                     Margin="10,0,0,0" Padding="15,0" Background="#FF007BFF" Foreground="White"
-                    FontWeight="Bold" BorderThickness="0" Cursor="Hand"
-                    Click="btnActualizar_Click">
+                    FontWeight="Bold" BorderThickness="0" Cursor="Hand" Click="btnActualizar_Click">
                 <Button.Resources>
                     <Style TargetType="Border">
                         <Setter Property="CornerRadius" Value="5"/>
@@ -59,48 +45,75 @@
             </Button>
         </Grid>
 
+        <!-- 2. DASHBOARD DE GRÁFICOS -->
         <Grid Grid.Row="1" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
+            <!-- GRÁFICO 1: MONTOS POR CLIENTE (COLUMNAS) -->
             <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="15" Margin="0,0,5,0">
                 <Grid>
-                    <TextBlock Text="Top 10 Clientes por Acumulado (Últimos 6 Meses)" FontSize="16" FontWeight="Bold" 
-                               Foreground="#FF007BFF" VerticalAlignment="Top"/>
+                    <TextBlock Text="Top 10 Clientes (Mayor Acumulado)" FontSize="16" FontWeight="Bold" Foreground="#FF007BFF" VerticalAlignment="Top"/>
 
-                    <lvc:CartesianChart Series="{Binding SeriesClientes}" LegendLocation="Bottom" Margin="0,30,0,0">
+                    <lvc:CartesianChart Series="{Binding SeriesClientes}" LegendLocation="None" Margin="0,30,0,0">
                         <lvc:CartesianChart.AxisY>
-                            <lvc:Axis Title="Monto Acumulado ($)" LabelFormatter="{Binding Formatter}"/>
+                            <lvc:Axis Title="Monto ($)" LabelFormatter="{Binding Formatter}"/>
                         </lvc:CartesianChart.AxisY>
                         <lvc:CartesianChart.AxisX>
-                            <lvc:Axis Title="Cliente" Labels="{Binding LabelsClientes}"/>
+                            <lvc:Axis Labels="{Binding LabelsClientes}" LabelsRotation="15">
+                                <lvc:Axis.Separator>
+                                    <lvc:Separator Step="1"/>
+                                </lvc:Axis.Separator>
+                            </lvc:Axis>
                         </lvc:CartesianChart.AxisX>
                     </lvc:CartesianChart>
                 </Grid>
             </Border>
 
+            <!-- GRÁFICO 2: TIPOS DE OPERACIÓN (BARRAS HORIZONTALES) -->
+            <!-- AQUÍ ESTABA EL ERROR: Antes era PieChart, ahora es CartesianChart -->
             <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="15" Margin="5,0,0,0">
                 <Grid>
-                    <TextBlock Text="Operaciones por Tipo" FontSize="16" FontWeight="Bold" 
-                               Foreground="#FF007BFF" VerticalAlignment="Top"/>
+                    <StackPanel VerticalAlignment="Top">
+                        <TextBlock x:Name="txtTituloPastel" Text="Operaciones por Tipo (Global)" 
+                                   FontSize="16" FontWeight="Bold" Foreground="#FF007BFF" TextWrapping="Wrap"/>
+                        <Button x:Name="btnVerGlobal" Content="Ver Global" Visibility="Collapsed"
+                                HorizontalAlignment="Left" Margin="0,5,0,0" Padding="10,2" 
+                                Background="#FF6C757D" Foreground="White" BorderThickness="0" 
+                                FontSize="10" Cursor="Hand" Click="btnVerGlobal_Click"/>
+                    </StackPanel>
 
-                    <lvc:PieChart Series="{Binding SeriesTipoOperacion}" LegendLocation="Right" Margin="0,30,0,0"/>
+                    <!-- CORRECCIÓN: Usamos CartesianChart para soportar RowSeries -->
+                    <lvc:CartesianChart Series="{Binding SeriesTipoOperacion}" LegendLocation="None" Margin="0,40,0,0">
+                        <lvc:CartesianChart.AxisX>
+                            <lvc:Axis Title="Cantidad" LabelFormatter="{Binding FormatterCantidad}"/>
+                        </lvc:CartesianChart.AxisX>
+                        <lvc:CartesianChart.AxisY>
+                            <lvc:Axis Labels="{Binding LabelsTipos}">
+                                <lvc:Axis.Separator>
+                                    <lvc:Separator Step="1"/>
+                                </lvc:Axis.Separator>
+                            </lvc:Axis>
+                        </lvc:CartesianChart.AxisY>
+                    </lvc:CartesianChart>
                 </Grid>
             </Border>
         </Grid>
 
+        <!-- 3. TABLA DE ALERTAS -->
         <Border Grid.Row="2" Background="White" CornerRadius="5" Padding="15">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Alertas de Acumulación (Clientes cerca del Umbral de Aviso)" 
+                <TextBlock DockPanel.Dock="Top" Text="Alertas de Acumulación (Seleccione un cliente para filtrar el gráfico derecho)" 
                            FontSize="16" FontWeight="Bold" Foreground="#FFDC3545" Margin="0,0,0,10"/>
 
-                <DataGrid x:Name="dgAlertas" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid x:Name="dgAlertas" AutoGenerateColumns="False" IsReadOnly="True" 
+                          SelectionMode="Single" SelectionChanged="dgAlertas_SelectionChanged">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNombre}" Width="*"/>
-                        <DataGridTextColumn Header="Acumulado (6 Meses)" Binding="{Binding MontoAcumulado, StringFormat=C}" Width="180"/>
-                        <DataGridTextColumn Header="% del Umbral" Binding="{Binding PorcentajeUmbral, StringFormat={}{0:P0}}" Width="120"/>
+                        <DataGridTextColumn Header="Acumulado" Binding="{Binding MontoAcumulado, StringFormat=C}" Width="140"/>
+                        <DataGridTextColumn Header="% Límite" Binding="{Binding PorcentajeUmbral, StringFormat={}{0:P0}}" Width="80"/>
                         <DataGridTextColumn Header="Estado" Binding="{Binding EstadoAlerta}" Width="180">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
@@ -119,11 +132,10 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="Última Actualización" Binding="{Binding UltimaActualizacion, StringFormat='dd/MM/yyyy HH:mm'}" Width="150"/>
+                        <DataGridTextColumn Header="Última Act." Binding="{Binding UltimaActualizacion, StringFormat='dd/MM HH:mm'}" Width="120"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </DockPanel>
         </Border>
-
     </Grid>
 </UserControl>

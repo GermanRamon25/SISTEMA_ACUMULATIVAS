@@ -36,7 +36,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    // Validamos si la conexión está abierta (GetConnection ya la abre, pero por seguridad)
                     if (conn.State != System.Data.ConnectionState.Open) conn.Open();
 
                     string query = "SELECT Id, Nombre, RFC, CURP, TipoPersona, FechaRegistro, Activo FROM Clientes WHERE Activo = 1";
@@ -60,7 +59,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         }
                     }
                 }
-                // Ordenar por nombre
                 dgClientes.ItemsSource = _clientesCache.OrderBy(c => c.Nombre).ToList();
             }
             catch (Exception ex)
@@ -72,10 +70,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
         // --- 2. GUARDADO (CREATE / UPDATE) ---
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            // Validaciones
+            // A) Validaciones de Campos Vacíos
             if (string.IsNullOrWhiteSpace(txtNombre.Text) || string.IsNullOrWhiteSpace(txtRFC.Text))
             {
-                MessageBox.Show("Nombre y RFC son obligatorios.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("El Nombre y el RFC son obligatorios.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -85,36 +83,120 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 return;
             }
 
+            string nombre = txtNombre.Text.Trim().ToUpper();
+            string rfc = txtRFC.Text.Trim().ToUpper();
+            string curp = txtCURP.Text.Trim().ToUpper();
             string tipoPersona = ((ComboBoxItem)cmbTipoPersona.SelectedItem).Tag.ToString();
 
+            int idActual = 0;
+            if (txtId.Text != "(Nuevo)")
+            {
+                idActual = int.Parse(txtId.Text);
+            }
+
+            // B) --- VALIDACIÓN PREVIA (C#) ---
+            string mensajeDuplicado = ValidarDuplicado(nombre, rfc, idActual);
+            if (!string.IsNullOrEmpty(mensajeDuplicado))
+            {
+                MessageBox.Show(mensajeDuplicado, "Cliente Duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // C) Guardado en BD con "Paracaídas"
             try
             {
-                if (txtId.Text == "(Nuevo)")
-                {
-                    InsertarCliente(txtNombre.Text.Trim(), txtRFC.Text.Trim(), txtCURP.Text.Trim(), tipoPersona);
-                }
+                if (idActual == 0)
+                    InsertarCliente(nombre, rfc, curp, tipoPersona);
                 else
-                {
-                    int id = int.Parse(txtId.Text);
-                    ActualizarCliente(id, txtNombre.Text.Trim(), txtRFC.Text.Trim(), txtCURP.Text.Trim(), tipoPersona);
-                }
+                    ActualizarCliente(idActual, nombre, rfc, curp, tipoPersona);
 
                 CargarClientes();
                 LimpiarFormulario();
                 MessageBox.Show("Cliente guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+            catch (SqlException sqlEx)
+            {
+                // --- AQUÍ ATRAPAMOS EL ERROR DE LA IMAGEN ---
+                // El error 2601 o 2627 es "Violation of UNIQUE KEY"
+                if (sqlEx.Number == 2601 || sqlEx.Number == 2627)
+                {
+                    MessageBox.Show($"El RFC '{rfc}' ya existe en la base de datos (posiblemente en un registro oculto o desactivado).\n\nNo se puede duplicar.",
+                                    "RFC Duplicado", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    MessageBox.Show("Error de Base de Datos: " + sqlEx.Message, "Error SQL", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al guardar: " + ex.Message, "Error BD", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Error general: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // MÉTODO CLAVE: Prepara la auditoría para el Trigger
+        // --- MÉTODO CORREGIDO: VALIDAR TODO (INCLUIDO BORRADOS) ---
+        private string ValidarDuplicado(string nombre, string rfc, int idExcluir)
+        {
+            try
+            {
+                using (SqlConnection conn = _conexion.GetConnection())
+                {
+                    if (conn.State != System.Data.ConnectionState.Open) conn.Open();
+
+                    // CORRECCIÓN: Quitamos "AND Activo = 1"
+                    // La base de datos prohíbe duplicados SIEMPRE, así que nosotros también debemos buscar en TODO.
+                    string query = @"SELECT COUNT(*) FROM Clientes 
+                                     WHERE (Nombre = @Nombre OR RFC = @RFC) 
+                                     AND Id != @Id";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Nombre", nombre);
+                        cmd.Parameters.AddWithValue("@RFC", rfc);
+                        cmd.Parameters.AddWithValue("@Id", idExcluir);
+
+                        int count = (int)cmd.ExecuteScalar();
+
+                        if (count > 0)
+                        {
+                            // Averiguar cuál fue el problema
+                            // Nota: Aquí también quitamos Activo=1 para saber quién causa el conflicto
+                            query = "SELECT Nombre, RFC, Activo FROM Clientes WHERE (Nombre = @Nombre OR RFC = @RFC) AND Id != @Id";
+                            cmd.CommandText = query;
+
+                            using (SqlDataReader reader = cmd.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    string nombreEncontrado = reader["Nombre"].ToString();
+                                    string rfcEncontrado = reader["RFC"].ToString();
+                                    bool esActivo = (bool)reader["Activo"];
+                                    string estadoStr = esActivo ? "" : " (Cliente DESACTIVADO)";
+
+                                    if (rfcEncontrado.ToUpper() == rfc)
+                                        return $"El RFC '{rfc}' ya está registrado{estadoStr}.\nPertenece a: {nombreEncontrado}";
+
+                                    if (nombreEncontrado.ToUpper() == nombre)
+                                        return $"El nombre '{nombre}' ya existe{estadoStr}.\nRFC registrado: {rfcEncontrado}";
+                                }
+                            }
+                            // Si count > 0 pero no entramos al if (raro), mensaje genérico
+                            return "Ya existe un cliente con ese Nombre o RFC.";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error al validar duplicados: " + ex.Message;
+            }
+
+            return null; // Todo limpio
+        }
+
         private void EstablecerContextoUsuario(SqlConnection conn)
         {
-            // Si no hay usuario logueado (ej. pruebas), usamos 0
             int usuarioId = ClsSesion.UsuarioId;
-
             string query = "DECLARE @Bin varbinary(4) = CONVERT(varbinary(4), @UserId); SET CONTEXT_INFO @Bin;";
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {
@@ -127,10 +209,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
         {
             using (SqlConnection conn = _conexion.GetConnection())
             {
-                // 1. Establecer quién es el usuario (para el Trigger)
                 EstablecerContextoUsuario(conn);
-
-                // 2. Ejecutar el Insert
                 string query = "INSERT INTO Clientes (Nombre, RFC, CURP, TipoPersona, Activo, FechaRegistro) VALUES (@Nombre, @RFC, @CURP, @Tipo, 1, GETDATE())";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -147,10 +226,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
         {
             using (SqlConnection conn = _conexion.GetConnection())
             {
-                // 1. Establecer quién es el usuario (para el Trigger)
                 EstablecerContextoUsuario(conn);
-
-                // 2. Ejecutar el Update
                 string query = "UPDATE Clientes SET Nombre=@Nombre, RFC=@RFC, CURP=@CURP, TipoPersona=@Tipo WHERE Id=@Id";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -164,7 +240,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- 3. ELIMINAR (SOFT DELETE) ---
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
             if (txtId.Text == "(Nuevo)") return;
@@ -176,10 +251,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     int id = int.Parse(txtId.Text);
                     using (SqlConnection conn = _conexion.GetConnection())
                     {
-                        // 1. Establecer quién es el usuario (para el Trigger)
                         EstablecerContextoUsuario(conn);
-
-                        // 2. Ejecutar el Soft Delete
                         string query = "UPDATE Clientes SET Activo = 0 WHERE Id = @Id";
                         using (SqlCommand cmd = new SqlCommand(query, conn))
                         {
@@ -197,7 +269,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- 4. UTILIDADES DE UI ---
         private void LimpiarFormulario()
         {
             txtId.Text = "(Nuevo)";
