@@ -1,6 +1,7 @@
 ﻿using SISTEMA_ACUMULATIVAS.Conexion;
 using System;
 using System.Collections.Generic;
+using System.Data; // <--- AGREGADO: Necesario para CommandType.StoredProcedure
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -85,6 +86,12 @@ namespace SISTEMA_ACUMULATIVAS
             {
                 if (ValidarUsuario(usuario, password))
                 {
+                    // --- NUEVO: MANTENIMIENTO AUTOMÁTICO (REGLA 6 MESES) ---
+                    // Antes de cerrar el login, recalculamos los saldos para que 
+                    // lo que tenga más de 6 meses se reste automáticamente.
+                    EjecutarMantenimientoDiario();
+                    // -------------------------------------------------------
+
                     // Si la validación es exitosa, cerramos el login.
                     // El formulario principal (App.xaml.cs) debe manejar esto.
                     this.DialogResult = true; // Marcamos como OK
@@ -139,10 +146,32 @@ namespace SISTEMA_ACUMULATIVAS
             return false; // Usuario no encontrado o contraseña incorrecta
         }
 
+        // --- NUEVO MÉTODO AGREGADO ---
+        private void EjecutarMantenimientoDiario()
+        {
+            try
+            {
+                // Abre una conexión rápida para ejecutar el Stored Procedure de limpieza
+                using (SqlConnection conn = _conexion.GetConnection())
+                {
+                    // Asegúrate de haber creado el procedimiento 'sp_RecalcularAcumuladosDiarios' en SQL primero
+                    using (SqlCommand cmd = new SqlCommand("sp_RecalcularAcumuladosDiarios", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Si falla el mantenimiento (ej. no existe el SP todavía), no bloqueamos el Login.
+                // Solo lo ignoramos o podríamos usar Debug.WriteLine(ex.Message);
+            }
+        }
+
         // Este método es para el link de registro
         private void linkRegistro_Click(object sender, RoutedEventArgs e)
         {
-            
             RegistroWindow registroVentana = new RegistroWindow();
             registroVentana.ShowDialog();
         }
