@@ -12,6 +12,7 @@ namespace SISTEMA_ACUMULATIVAS.Models
         public int ClienteId { get; set; }
         public string NombreCliente { get; set; }
         public string RFC { get; set; }
+        public string CURP { get; set; }
         public decimal MontoTotalAcumulado { get; set; }
         public string MotivoAviso { get; set; } // Ej: "Acumulación 6 meses"
 

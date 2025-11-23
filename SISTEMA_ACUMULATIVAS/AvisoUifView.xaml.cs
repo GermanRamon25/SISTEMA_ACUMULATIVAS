@@ -87,16 +87,18 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                     foreach (int idCliente in clientesActivosIds)
                     {
+                        // --- CAMBIO 1: AGREGAR CURP A LA CONSULTA ---
                         string queryAcumulado = @"
-                            SELECT c.Nombre, c.RFC, SUM(o.Monto) as Total
+                            SELECT c.Nombre, c.RFC, c.CURP, SUM(o.Monto) as Total
                             FROM Operaciones o
                             INNER JOIN Clientes c ON o.ClienteId = c.Id
                             WHERE o.ClienteId = @Id AND o.FechaOperacion >= @Inicio AND o.FechaOperacion <= @Fin
-                            GROUP BY c.Nombre, c.RFC";
+                            GROUP BY c.Nombre, c.RFC, c.CURP"; // Importante agrupar también por CURP
 
                         decimal totalPeriodo = 0;
                         string nombre = "";
                         string rfc = "";
+                        string curp = "";
 
                         using (SqlCommand cmd = new SqlCommand(queryAcumulado, conn))
                         {
@@ -110,6 +112,8 @@ namespace SISTEMA_ACUMULATIVAS.Views
                                     totalPeriodo = (decimal)reader["Total"];
                                     nombre = reader["Nombre"].ToString();
                                     rfc = reader["RFC"].ToString();
+                                    // --- CAMBIO 2: LEER CURP ---
+                                    curp = reader["CURP"] != DBNull.Value ? reader["CURP"].ToString() : "N/A";
                                 }
                             }
                         }
@@ -121,6 +125,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                                 ClienteId = idCliente,
                                 NombreCliente = nombre,
                                 RFC = rfc,
+                                CURP = curp, // Asignar al modelo
                                 MontoTotalAcumulado = totalPeriodo,
                                 MotivoAviso = "Acumulación > Umbral",
                                 OperacionesDetalle = ObtenerDetalleOperaciones(conn, idCliente, fechaInicio, fechaFin)
@@ -193,6 +198,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     </tr>";
             }
 
+            // --- CAMBIO 3: AGREGAR CURP AL HTML ---
             return $@"
             <html>
             <head>
@@ -225,8 +231,13 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 <div class='info-grid'>
                     <div class='label'>Cliente:</div>
                     <div class='value'>{item.NombreCliente}</div>
+                    
                     <div class='label'>RFC:</div>
                     <div class='value'>{item.RFC}</div>
+
+                    <div class='label'>CURP:</div>
+                    <div class='value'>{item.CURP}</div>
+
                     <div class='label'>Total Acumulado:</div>
                     <div class='value total'>{item.MontoTotalAcumulado:C}</div>
                 </div>

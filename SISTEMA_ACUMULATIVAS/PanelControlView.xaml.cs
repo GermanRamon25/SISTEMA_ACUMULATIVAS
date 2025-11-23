@@ -83,7 +83,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
             catch { }
         }
-
+        //  C#
         private void btnRefrescarPapelera_Click(object sender, RoutedEventArgs e) { CargarPapelera(); }
 
         private void btnRestaurar_Click(object sender, RoutedEventArgs e)
