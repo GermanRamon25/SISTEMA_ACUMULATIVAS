@@ -101,12 +101,16 @@
     <Compile Include="ClienteView.xaml.cs">
       <DependentUpon>ClienteView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Conexion\ClsConfiguracion.cs" />
     <Compile Include="Models\Acumulado.cs" />
     <Compile Include="Models\Cliente.cs" />
     <Compile Include="Models\Operacion.cs" />
     <Compile Include="Models\ReporteAviso.cs" />
     <Compile Include="OperacionesView.xaml.cs">
       <DependentUpon>OperacionesView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PanelControlView.xaml.cs">
+      <DependentUpon>PanelControlView.xaml</DependentUpon>
     </Compile>
     <Compile Include="RegistroWindow.xaml.cs">
       <DependentUpon>RegistroWindow.xaml</DependentUpon>
@@ -146,6 +150,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="OperacionesView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PanelControlView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
