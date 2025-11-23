@@ -61,13 +61,13 @@
                 <views:AcumuladosView />
             </TabItem>
 
-
             <TabItem Header=" Aviso UIF ">
                 <views:AvisoUifView />
             </TabItem>
 
-
-           
+            <TabItem x:Name="tabPanelControl" Header=" ⚙️ Panel Admin " Visibility="Collapsed">
+                <views:PanelControlView />
+            </TabItem>
 
         </TabControl>
 

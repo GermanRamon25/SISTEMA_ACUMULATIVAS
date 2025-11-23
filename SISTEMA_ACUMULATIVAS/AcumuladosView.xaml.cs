@@ -14,7 +14,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
 {
     public partial class AcumuladosView : UserControl
     {
-        private const decimal VALOR_UMA = 113.14m;
+        // ELIMINADO: private const decimal VALOR_UMA = 113.14m;  <-- Ya no se usa fija
         private const int UMBRAL_IDENTIFICACION = 8000;
 
         private ClsConexion _conexion;
@@ -26,8 +26,8 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
         // Propiedades Gráfico 2 (Filas - Tipos de Operación)
         public SeriesCollection SeriesTipoOperacion { get; set; }
-        public string[] LabelsTipos { get; set; } // NUEVO: Etiquetas para el eje Y
-        public Func<double, string> FormatterCantidad { get; set; } // NUEVO: Formato entero
+        public string[] LabelsTipos { get; set; }
+        public Func<double, string> FormatterCantidad { get; set; }
 
         public AcumuladosView()
         {
@@ -58,7 +58,24 @@ namespace SISTEMA_ACUMULATIVAS.Views
         private void CargarTopClientesYAlertas()
         {
             List<Acumulado> listaAcumulados = new List<Acumulado>();
-            decimal montoUmbral = VALOR_UMA * UMBRAL_IDENTIFICACION;
+
+            // --- CAMBIO IMPORTANTE: UMA DINÁMICA ---
+            // Leemos el valor que configuraste en el Panel de Control
+            ClsConfiguracion config = new ClsConfiguracion();
+            decimal valorUmaActual = config.ObtenerUMA();
+
+            // Protección por si la BD devuelve 0 (primera vez)
+            if (valorUmaActual == 0) valorUmaActual = 113.14m;
+
+            decimal montoUmbral = valorUmaActual * UMBRAL_IDENTIFICACION;
+
+            // --- ACTUALIZACIÓN VISUAL (Aquí corregimos el error de que "no cambiaba el valor") ---
+            if (lblInfoUma != null)
+                lblInfoUma.Text = $"Umbrales (UMA Actual: {valorUmaActual:C})";
+
+            if (lblMontoLimite != null)
+                lblMontoLimite.Text = $"8,000 UMAs ({montoUmbral:C})";
+            // ------------------------------------------------------------------------------------
 
             try
             {
@@ -106,7 +123,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         Values = new ChartValues<decimal>(top10.Select(x => x.MontoAcumulado)),
                         DataLabels = true,
                         LabelPoint = point => point.Y.ToString("C0"),
-                        Fill = System.Windows.Media.Brushes.DodgerBlue // Color profesional
+                        Fill = System.Windows.Media.Brushes.DodgerBlue
                     }
                 };
                 LabelsClientes = top10.Select(x => x.ClienteNombre).ToArray();
@@ -148,7 +165,8 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                     if (clienteId.HasValue)
                     {
-                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad ASC"; // Orden ASC para que se vea de arriba a abajo en el gráfico
+                        // AQUÍ YA ESTÁ LA REGLA DE 6 MESES APLICADA EN LA CONSULTA VISUAL TAMBIÉN
+                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad ASC";
                         cmd.Parameters.AddWithValue("@Id", clienteId.Value);
                         txtTituloPastel.Text = $"Operaciones de: {nombreCliente}";
                         btnVerGlobal.Visibility = Visibility.Visible;
@@ -162,7 +180,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                     cmd.CommandText = query;
 
-                    // Usamos una sola serie para todas las barras (mismo color)
                     var valores = new ChartValues<int>();
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
@@ -170,7 +187,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         while (reader.Read())
                         {
                             string tipo = reader["TipoOperacion"].ToString();
-                            // Recortar texto si es exageradamente largo (opcional)
                             if (tipo.Length > 35) tipo = tipo.Substring(0, 35) + "...";
 
                             etiquetas.Add(tipo);
@@ -178,14 +194,13 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         }
                     }
 
-                    // Configurar el gráfico de Filas
                     SeriesTipoOperacion.Add(new RowSeries
                     {
                         Title = "Cantidad",
                         Values = valores,
                         DataLabels = true,
-                        LabelPoint = point => point.X.ToString("N0"), // Mostrar número entero
-                        Fill = (SolidColorBrush)new BrushConverter().ConvertFrom("#FF28A745"), // Verde profesional
+                        LabelPoint = point => point.X.ToString("N0"),
+                        Fill = (SolidColorBrush)new BrushConverter().ConvertFrom("#FF28A745"),
                         RowPadding = 10
                     });
 

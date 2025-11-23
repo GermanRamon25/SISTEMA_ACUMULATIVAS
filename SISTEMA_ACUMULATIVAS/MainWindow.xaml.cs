@@ -14,8 +14,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-
-
 namespace SISTEMA_ACUMULATIVAS
 {
     public partial class MainWindow : Window
@@ -32,6 +30,19 @@ namespace SISTEMA_ACUMULATIVAS
             if (ClsSesion.UsuarioId != 0)
             {
                 lblUsuarioActual.Text = ClsSesion.NombreUsuario;
+
+                // --- NUEVO: VALIDACIÓN DE SEGURIDAD PARA EL PANEL ---
+                // Si el usuario es "Admin", mostramos la pestaña de configuración.
+                // Si es "Operador", la ocultamos (Collapsed).
+                if (ClsSesion.Rol == "Admin")
+                {
+                    tabPanelControl.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    tabPanelControl.Visibility = Visibility.Collapsed;
+                }
+                // ----------------------------------------------------
             }
             else
             {
@@ -41,7 +52,6 @@ namespace SISTEMA_ACUMULATIVAS
             }
         }
 
-        // --- ESTA ES LA FUNCIÓN QUE FALTA Y CAUSA EL ERROR ---
         private void btnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
             // 1. Preguntar si está seguro

@@ -71,6 +71,55 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="Gestión de Usuarios">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Content="🔄 Actualizar Lista" Click="btnRefrescarUsuarios_Click" 
+                                Background="#FF007BFF" Foreground="White" Padding="10,5" Margin="0,0,20,0" BorderThickness="0"/>
+
+                        <TextBlock Text="Acciones:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
+
+                        <Button x:Name="btnHacerAdmin" Content="👮 Volver Admin" 
+                                Background="#17A2B8" Foreground="White" Padding="10,5" Margin="0,0,5,0"
+                                BorderThickness="0" Click="btnHacerAdmin_Click"/>
+
+                        <Button x:Name="btnHacerOperador" Content="👤 Volver Operador" 
+                                Background="#FF6C757D" Foreground="White" Padding="10,5" Margin="0,0,5,0"
+                                BorderThickness="0" Click="btnHacerOperador_Click"/>
+
+                        <Button x:Name="btnBloquear" Content="🚫 Bloquear/Desbloquear" 
+                                Background="#FFDC3545" Foreground="White" Padding="10,5"
+                                BorderThickness="0" Click="btnBloquear_Click"/>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" x:Name="dgUsuarios" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                            <DataGridTextColumn Header="Usuario" Binding="{Binding Usuario}" Width="120"/>
+                            <DataGridTextColumn Header="Nombre Completo" Binding="{Binding NombreCompleto}" Width="*"/>
+                            <DataGridTextColumn Header="Rol Actual" Binding="{Binding Rol}" Width="120">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Rol}" Value="Admin">
+                                                <Setter Property="Foreground" Value="#FF007BFF"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="60"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
         </TabControl>
     </Grid>
 </UserControl>
