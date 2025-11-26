@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input; 
 
 namespace SISTEMA_ACUMULATIVAS.Views
 {
@@ -24,6 +25,15 @@ namespace SISTEMA_ACUMULATIVAS.Views
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             CargarClientes();
+        }
+
+        // --- VALIDACIÓN: BLOQUEAR ESPACIOS (Para RFC y CURP) ---
+        private void TxtSinEspacios_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Space)
+            {
+                e.Handled = true; // Ignora la tecla espacio
+            }
         }
 
         // --- 1. LECTURA (READ) ---
@@ -70,7 +80,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
         // --- 2. GUARDADO (CREATE / UPDATE) ---
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            // A) Validaciones de Campos Vacíos
             if (string.IsNullOrWhiteSpace(txtNombre.Text) || string.IsNullOrWhiteSpace(txtRFC.Text))
             {
                 MessageBox.Show("El Nombre y el RFC son obligatorios.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -83,7 +92,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 return;
             }
 
-            string nombre = txtNombre.Text.Trim().ToUpper();
+            // CAMBIO: Ya no usamos ToUpper() en el nombre para respetar lo que el usuario escriba
+            string nombre = txtNombre.Text.Trim();
+
+            // RFC y CURP sí van en mayúsculas siempre (por estándar fiscal)
             string rfc = txtRFC.Text.Trim().ToUpper();
             string curp = txtCURP.Text.Trim().ToUpper();
             string tipoPersona = ((ComboBoxItem)cmbTipoPersona.SelectedItem).Tag.ToString();
@@ -94,7 +106,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 idActual = int.Parse(txtId.Text);
             }
 
-            // B) --- VALIDACIÓN PREVIA (C#) ---
             string mensajeDuplicado = ValidarDuplicado(nombre, rfc, idActual);
             if (!string.IsNullOrEmpty(mensajeDuplicado))
             {
@@ -102,7 +113,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 return;
             }
 
-            // C) Guardado en BD con "Paracaídas"
             try
             {
                 if (idActual == 0)
@@ -116,11 +126,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
             catch (SqlException sqlEx)
             {
-                // --- AQUÍ ATRAPAMOS EL ERROR DE LA IMAGEN ---
-                // El error 2601 o 2627 es "Violation of UNIQUE KEY"
                 if (sqlEx.Number == 2601 || sqlEx.Number == 2627)
                 {
-                    MessageBox.Show($"El RFC '{rfc}' ya existe en la base de datos (posiblemente en un registro oculto o desactivado).\n\nNo se puede duplicar.",
+                    MessageBox.Show($"El RFC '{rfc}' ya existe en la base de datos.\n\nNo se puede duplicar.",
                                     "RFC Duplicado", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
@@ -134,7 +142,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- MÉTODO CORREGIDO: VALIDAR TODO (INCLUIDO BORRADOS) ---
         private string ValidarDuplicado(string nombre, string rfc, int idExcluir)
         {
             try
@@ -143,8 +150,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 {
                     if (conn.State != System.Data.ConnectionState.Open) conn.Open();
 
-                    // CORRECCIÓN: Quitamos "AND Activo = 1"
-                    // La base de datos prohíbe duplicados SIEMPRE, así que nosotros también debemos buscar en TODO.
                     string query = @"SELECT COUNT(*) FROM Clientes 
                                      WHERE (Nombre = @Nombre OR RFC = @RFC) 
                                      AND Id != @Id";
@@ -159,8 +164,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                         if (count > 0)
                         {
-                            // Averiguar cuál fue el problema
-                            // Nota: Aquí también quitamos Activo=1 para saber quién causa el conflicto
                             query = "SELECT Nombre, RFC, Activo FROM Clientes WHERE (Nombre = @Nombre OR RFC = @RFC) AND Id != @Id";
                             cmd.CommandText = query;
 
@@ -176,11 +179,11 @@ namespace SISTEMA_ACUMULATIVAS.Views
                                     if (rfcEncontrado.ToUpper() == rfc)
                                         return $"El RFC '{rfc}' ya está registrado{estadoStr}.\nPertenece a: {nombreEncontrado}";
 
-                                    if (nombreEncontrado.ToUpper() == nombre)
+                                    // Comparación insensible a mayúsculas para el nombre
+                                    if (nombreEncontrado.Equals(nombre, StringComparison.OrdinalIgnoreCase))
                                         return $"El nombre '{nombre}' ya existe{estadoStr}.\nRFC registrado: {rfcEncontrado}";
                                 }
                             }
-                            // Si count > 0 pero no entramos al if (raro), mensaje genérico
                             return "Ya existe un cliente con ese Nombre o RFC.";
                         }
                     }
@@ -191,7 +194,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 return "Error al validar duplicados: " + ex.Message;
             }
 
-            return null; // Todo limpio
+            return null;
         }
 
         private void EstablecerContextoUsuario(SqlConnection conn)

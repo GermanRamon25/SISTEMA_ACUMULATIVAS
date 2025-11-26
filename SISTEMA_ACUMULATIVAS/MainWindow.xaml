@@ -10,15 +10,18 @@
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized">
 
-    <Grid Background="#FFF0F4F8">
+    <Grid Background="#FFF5F5F5">
         <Grid.RowDefinitions>
-            <RowDefinition Height="60"/>
+            <RowDefinition Height="65"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="35"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#FF007BFF">
-            <Grid Margin="10,0">
+        <Border Grid.Row="0" Background="#FF1B3A57">
+            <Border.Effect>
+                <DropShadowEffect ShadowDepth="2" Direction="270" Opacity="0.3" BlurRadius="5"/>
+            </Border.Effect>
+            <Grid Margin="20,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -26,54 +29,106 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="ACUMULATIVAS NOTARÍA" 
-                               Foreground="White" FontSize="20" FontWeight="Bold"
-                               VerticalAlignment="Center" Margin="10,0"/>
-                    <TextBlock x:Name="txtNumeroNotaria" Text="Notaría No. [PENDIENTE]" 
-                               Foreground="#FFDDDDDD" FontSize="14"
-                               VerticalAlignment="Center" Margin="20,0,0,0"/>
+                    <TextBlock Text="⚖️" Foreground="#FFD4AF37" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="SISTEMA DE ACUMULATIVAS" 
+                                   Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+
+                        <TextBlock x:Name="txtNumeroNotaria" Text="NOTARÍA PÚBLICA No. 215" 
+                                   Foreground="#FFCED4DA" FontSize="12"
+                                   FontWeight="Regular"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Usuario:" Foreground="#FFDDDDDD" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="lblUsuarioActual" Text="Cargando..." 
-                               Foreground="White" FontWeight="Bold" 
-                               Margin="5,0,15,0" VerticalAlignment="Center"/>
+                    <Border Background="#33FFFFFF" CornerRadius="15" Padding="15,5" Margin="0,0,15,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="👤" Foreground="White" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="lblUsuarioActual" Text="Cargando..." 
+                                       Foreground="White" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+
                     <Button x:Name="btnCerrarSesion" Content="Cerrar Sesión"
-                            Background="#FF0056b3" Foreground="White"
-                            BorderThickness="0" Padding="10,5" Cursor="Hand"
-                            Click="btnCerrarSesion_Click"/>
+                            Background="#FF343A40" Foreground="White"
+                            BorderBrush="#FF495057" BorderThickness="1"
+                            Padding="15,5" Cursor="Hand"
+                            Click="btnCerrarSesion_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <TabControl Grid.Row="1" Margin="10" Style="{StaticResource CustomTabControlStyle}">
+        <TabControl Grid.Row="1" Margin="10" BorderThickness="0" Background="Transparent">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border x:Name="Border" Padding="20,10" Background="Transparent" 
+                                        BorderBrush="Transparent" BorderThickness="0,0,0,3" Margin="0,0,5,0">
+                                    <ContentPresenter ContentSource="Header" 
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      TextElement.FontSize="14" 
+                                                      TextElement.FontWeight="SemiBold"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="BorderBrush" Value="#FF1B3A57"/>
+                                        <Setter Property="Foreground" Value="#FF1B3A57"/>
+                                        <Setter TargetName="Border" Property="Background" Value="#111B3A57"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter Property="Foreground" Value="#FF6C757D"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Foreground" Value="#FF1B3A57"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
 
-            <TabItem Header=" Clientes ">
+            <TabItem Header="CLIENTES">
                 <views:ClienteView />
             </TabItem>
 
-            <TabItem Header=" Operaciones ">
+            <TabItem Header="OPERACIONES">
                 <views:OperacionesView />
             </TabItem>
 
-            <TabItem Header=" Acumulados y Alertas ">
+            <TabItem Header="ACUMULADOS Y ALERTAS">
                 <views:AcumuladosView />
             </TabItem>
 
-            <TabItem Header=" Aviso UIF ">
+            <TabItem Header="AVISO UIF">
                 <views:AvisoUifView />
             </TabItem>
 
-            <TabItem x:Name="tabPanelControl" Header=" ⚙️ Panel Admin " Visibility="Collapsed">
+            <TabItem x:Name="tabPanelControl" Header="⚙️ PANEL ADMIN" Visibility="Collapsed">
                 <views:PanelControlView />
             </TabItem>
 
         </TabControl>
 
-        <Border Grid.Row="2" Background="#FF007BFF">
-            <TextBlock x:Name="lblConexion" Text="Estado de Conexión: OK" 
-                       Foreground="White" Margin="10,0" VerticalAlignment="Center"/>
+        <Border Grid.Row="2" Background="#FF1B3A57">
+            <Grid Margin="15,0">
+                <TextBlock x:Name="lblConexion" Text="● Sistema Conectado y Seguro" 
+                           Foreground="#FF28A745" FontSize="12" FontWeight="Bold" 
+                           VerticalAlignment="Center"/>
+
+                <TextBlock Text="SISTEMA DE GESTIÓN NOTARIAL v1.0" 
+                           Foreground="#88FFFFFF" FontSize="11" 
+                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
         </Border>
     </Grid>
 </Window>

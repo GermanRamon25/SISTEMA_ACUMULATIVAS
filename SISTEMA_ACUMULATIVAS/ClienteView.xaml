@@ -11,22 +11,17 @@
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
-            <!-- 66% para el DataGrid -->
             <ColumnDefinition Width="1*"/>
-            <!-- 33% para el Formulario -->
         </Grid.ColumnDefinitions>
 
-        <!-- ==================== COLUMNA 1: LISTA DE CLIENTES (DataGrid) ==================== -->
         <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="10">
             <DockPanel>
-                <!-- Barra de Búsqueda -->
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
                     <TextBlock Text="Buscar por Nombre o RFC:" VerticalAlignment="Center" FontWeight="SemiBold"/>
                     <TextBox x:Name="txtBusqueda" Width="300" Margin="10,0" Padding="5"
                              TextChanged="txtBusqueda_TextChanged"/>
                 </StackPanel>
 
-                <!-- DataGrid (Tabla de Clientes) -->
                 <DataGrid x:Name="dgClientes" AutoGenerateColumns="False" 
                           IsReadOnly="True" SelectionMode="Single"
                           SelectionChanged="dgClientes_SelectionChanged">
@@ -41,41 +36,35 @@
             </DockPanel>
         </Border>
 
-        <!-- Divisor -->
         <GridSplitter Grid.Column="0" Width="5" HorizontalAlignment="Right" Background="Transparent"/>
 
-        <!-- ==================== COLUMNA 2: FORMULARIO DE REGISTRO ==================== -->
         <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="20">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="FormularioCliente">
                     <TextBlock Text="Detalles del Cliente" FontSize="18" FontWeight="Bold" 
                                Foreground="#FF007BFF" Margin="0,0,0,20"/>
 
-                    <!-- ID (Solo lectura) -->
                     <TextBlock Text="ID Cliente:" FontWeight="SemiBold"/>
                     <TextBox x:Name="txtId" IsReadOnly="True" Background="#FFEEEEEE" 
                              Margin="0,5,0,10" Padding="5"/>
 
-                    <!-- Nombre -->
                     <TextBlock Text="Nombre Completo / Razón Social:" FontWeight="SemiBold"/>
                     <TextBox x:Name="txtNombre" Margin="0,5,0,10" Padding="5"/>
 
-                    <!-- RFC -->
                     <TextBlock Text="RFC (Único):" FontWeight="SemiBold"/>
-                    <TextBox x:Name="txtRFC" MaxLength="13" Margin="0,5,0,10" Padding="5"/>
+                    <TextBox x:Name="txtRFC" MaxLength="13" Margin="0,5,0,10" Padding="5"
+                             CharacterCasing="Upper" PreviewKeyDown="TxtSinEspacios_PreviewKeyDown"/>
 
-                    <!-- CURP -->
                     <TextBlock Text="CURP (Opcional):" FontWeight="SemiBold"/>
-                    <TextBox x:Name="txtCURP" MaxLength="18" Margin="0,5,0,10" Padding="5"/>
+                    <TextBox x:Name="txtCURP" MaxLength="18" Margin="0,5,0,10" Padding="5"
+                             CharacterCasing="Upper" PreviewKeyDown="TxtSinEspacios_PreviewKeyDown"/>
 
-                    <!-- Tipo Persona -->
                     <TextBlock Text="Tipo de Persona:" FontWeight="SemiBold"/>
                     <ComboBox x:Name="cmbTipoPersona" Margin="0,5,0,20" Padding="5">
                         <ComboBoxItem Content="Persona Física" Tag="F"/>
                         <ComboBoxItem Content="Persona Moral" Tag="M"/>
                     </ComboBox>
 
-                    <!-- Botones de Acción -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>

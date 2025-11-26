@@ -12,7 +12,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
     public partial class AvisoUifView : UserControl
     {
         private ClsConexion _conexion;
-        private const decimal UMBRAL_AVISO = 8000 * 113.14m; // Umbral ajustado para pruebas
+
+        // Umbral General (Inmuebles, Poderes, etc.) ~ $905,120.00
+        private const decimal UMBRAL_AVISO_GENERAL = 8000 * 113.14m;
 
         public AvisoUifView()
         {
@@ -31,7 +33,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             CargarFechas();
         }
 
-        // --- CARGA DE COMBOS ---
         private void CargarFechas()
         {
             if (cmbAnio.Items.Count > 0) return;
@@ -49,7 +50,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             cmbMes.SelectedIndex = DateTime.Now.Month - 1;
         }
 
-        // --- BOTÓN BUSCAR ---
         private void btnBuscar_Click(object sender, RoutedEventArgs e)
         {
             if (cmbMes.SelectedIndex < 0 || cmbAnio.SelectedItem == null) return;
@@ -69,6 +69,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
+                    // 1. Detectar clientes que operaron en el mes seleccionado
                     string queryClientesMes = @"SELECT DISTINCT ClienteId FROM Operaciones WHERE MONTH(FechaOperacion) = @Mes AND YEAR(FechaOperacion) = @Anio";
                     List<int> clientesActivosIds = new List<int>();
 
@@ -82,23 +83,35 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         }
                     }
 
+                    // Ventana de tiempo (6 meses atrás)
                     DateTime fechaFin = new DateTime(anio, mes, 1).AddMonths(1).AddDays(-1);
                     DateTime fechaInicio = new DateTime(fechaFin.AddMonths(-5).Year, fechaFin.AddMonths(-5).Month, 1);
 
                     foreach (int idCliente in clientesActivosIds)
                     {
-                        // --- CAMBIO 1: AGREGAR CURP A LA CONSULTA ---
+                        // --- CAMBIO CRÍTICO EN LA CONSULTA SQL ---
+                        // Ahora verificamos si tiene operaciones de "Compraventa de acciones" usando CASE WHEN
                         string queryAcumulado = @"
-                            SELECT c.Nombre, c.RFC, c.CURP, SUM(o.Monto) as Total
+                            SELECT 
+                                c.Nombre, 
+                                c.RFC, 
+                                c.CURP, 
+                                SUM(o.Monto) as Total,
+                                MAX(CASE 
+                                    WHEN o.TipoOperacion LIKE '%Compraventa de acciones%' THEN 1 
+                                    WHEN o.TipoOperacion LIKE '%Constitución%' THEN 1 
+                                    ELSE 0 
+                                END) as TieneOperacionObligatoria
                             FROM Operaciones o
                             INNER JOIN Clientes c ON o.ClienteId = c.Id
                             WHERE o.ClienteId = @Id AND o.FechaOperacion >= @Inicio AND o.FechaOperacion <= @Fin
-                            GROUP BY c.Nombre, c.RFC, c.CURP"; // Importante agrupar también por CURP
+                            GROUP BY c.Nombre, c.RFC, c.CURP";
 
                         decimal totalPeriodo = 0;
                         string nombre = "";
                         string rfc = "";
                         string curp = "";
+                        bool esAvisoObligatorio = false;
 
                         using (SqlCommand cmd = new SqlCommand(queryAcumulado, conn))
                         {
@@ -112,22 +125,32 @@ namespace SISTEMA_ACUMULATIVAS.Views
                                     totalPeriodo = (decimal)reader["Total"];
                                     nombre = reader["Nombre"].ToString();
                                     rfc = reader["RFC"].ToString();
-                                    // --- CAMBIO 2: LEER CURP ---
                                     curp = reader["CURP"] != DBNull.Value ? reader["CURP"].ToString() : "N/A";
+
+                                    // Leemos la bandera que nos dice si hay acciones/constitución
+                                    esAvisoObligatorio = (int)reader["TieneOperacionObligatoria"] == 1;
                                 }
                             }
                         }
 
-                        if (totalPeriodo >= UMBRAL_AVISO)
+                        // --- LÓGICA DE NEGOCIO MODIFICADA ---
+                        // Avisamos SI supera el monto acumulado O SI es una operación obligatoria (Acciones)
+                        if (totalPeriodo >= UMBRAL_AVISO_GENERAL || esAvisoObligatorio)
                         {
+                            string motivo = "";
+                            if (esAvisoObligatorio)
+                                motivo = "Operación Societaria (Aviso Obligatorio)";
+                            else
+                                motivo = "Acumulación > Umbral General";
+
                             var reporteItem = new ReporteAvisoItem
                             {
                                 ClienteId = idCliente,
                                 NombreCliente = nombre,
                                 RFC = rfc,
-                                CURP = curp, // Asignar al modelo
+                                CURP = curp,
                                 MontoTotalAcumulado = totalPeriodo,
-                                MotivoAviso = "Acumulación > Umbral",
+                                MotivoAviso = motivo,
                                 OperacionesDetalle = ObtenerDetalleOperaciones(conn, idCliente, fechaInicio, fechaFin)
                             };
                             listaReporte.Add(reporteItem);
@@ -135,7 +158,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     }
                 }
                 dgClientesAviso.ItemsSource = listaReporte;
-                if (listaReporte.Count == 0) MessageBox.Show("No hay avisos en este periodo.", "Info");
+                if (listaReporte.Count == 0) MessageBox.Show("No hay avisos sujetos a reporte en este periodo.", "Sin Avisos");
             }
             catch (Exception ex)
             {
@@ -169,7 +192,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             return lista;
         }
 
-        // --- SELECCIÓN Y VISUALIZACIÓN ---
         private void dgClientesAviso_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (dgClientesAviso.SelectedItem is ReporteAvisoItem item)
@@ -183,7 +205,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- MÉTODO QUE GENERA EL HTML (Con Fondo Claro y Letra Grande) ---
         private string GenerarHtmlFicha(ReporteAvisoItem item)
         {
             string filasTabla = "";
@@ -198,19 +219,17 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     </tr>";
             }
 
-            // --- CAMBIO 3: AGREGAR CURP AL HTML ---
             return $@"
             <html>
             <head>
                 <meta charset='UTF-8'>
                 <style>
-                    /* ESTILOS CLAROS Y GRANDES */
                     body {{ 
                         background-color: #ffffff; 
                         color: #000000; 
                         font-family: 'Segoe UI', sans-serif; 
                         padding: 40px; 
-                        font-size: 16px; /* Letra base aumentada */
+                        font-size: 16px; 
                     }}
                     h1 {{ font-size: 26px; margin: 0 0 20px 0; text-transform: uppercase; }}
                     .info-grid {{ display: grid; grid-template-columns: 200px auto; gap: 10px; margin-bottom: 30px; }}
@@ -231,15 +250,14 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 <div class='info-grid'>
                     <div class='label'>Cliente:</div>
                     <div class='value'>{item.NombreCliente}</div>
-                    
                     <div class='label'>RFC:</div>
                     <div class='value'>{item.RFC}</div>
-
                     <div class='label'>CURP:</div>
                     <div class='value'>{item.CURP}</div>
-
                     <div class='label'>Total Acumulado:</div>
                     <div class='value total'>{item.MontoTotalAcumulado:C}</div>
+                    <div class='label'>Motivo del Aviso:</div>
+                    <div class='value' style='color:#d9534f; font-weight:bold;'>{item.MotivoAviso}</div>
                 </div>
 
                 <h3 style='font-size: 20px;'>Desglose de Operaciones</h3>

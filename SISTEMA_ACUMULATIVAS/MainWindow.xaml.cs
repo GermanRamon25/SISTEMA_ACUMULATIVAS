@@ -31,7 +31,7 @@ namespace SISTEMA_ACUMULATIVAS
             {
                 lblUsuarioActual.Text = ClsSesion.NombreUsuario;
 
-                // --- NUEVO: VALIDACIÓN DE SEGURIDAD PARA EL PANEL ---
+                //  NUEVO: VALIDACIÓN DE SEGURIDAD PARA EL PANEL ---
                 // Si el usuario es "Admin", mostramos la pestaña de configuración.
                 // Si es "Operador", la ocultamos (Collapsed).
                 if (ClsSesion.Rol == "Admin")
@@ -42,7 +42,7 @@ namespace SISTEMA_ACUMULATIVAS
                 {
                     tabPanelControl.Visibility = Visibility.Collapsed;
                 }
-                // ----------------------------------------------------
+               
             }
             else
             {
@@ -63,12 +63,36 @@ namespace SISTEMA_ACUMULATIVAS
             // 2. Limpiar la sesión global
             ClsSesion.CerrarSesion();
 
-            // 3. Abrir la ventana de Login
-            LoginWindow login = new LoginWindow();
-            login.Show();
+            // 3. Ocultamos la ventana actual (Dashboard) para que se vea limpio mientras carga el login
+            this.Hide();
 
-            // 4. Cerrar esta ventana (el Dashboard)
-            this.Close();
+            // 4. Abrir la ventana de Login EN MODO DIÁLOGO
+            LoginWindow login = new LoginWindow();
+
+            // --- CORRECCIÓN CLAVE ---
+            // Usamos ShowDialog() en lugar de Show(). 
+            // Esto permite que 'DialogResult = true' funcione en LoginWindow.xaml.cs
+            bool? resultado = login.ShowDialog();
+
+            if (resultado == true)
+            {
+                // Si el usuario se logueó correctamente, creamos un NUEVO Dashboard
+                // Esto reinicia la ventana principal con los permisos del nuevo usuario
+                MainWindow nuevoDashboard = new MainWindow();
+
+                // Le decimos a la App que esta es la nueva ventana principal
+                Application.Current.MainWindow = nuevoDashboard;
+
+                nuevoDashboard.Show();
+
+                // Cerramos definitivamente esta instancia vieja del Dashboard
+                this.Close();
+            }
+            else
+            {
+                // 6. Si cerró la ventana de Login sin entrar (canceló), apagamos la app por completo
+                Application.Current.Shutdown();
+            }
         }
     }
 }
