@@ -6,7 +6,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input; 
+using System.Windows.Input; // Necesario para KeyEventArgs
 
 namespace SISTEMA_ACUMULATIVAS.Views
 {
@@ -27,12 +27,13 @@ namespace SISTEMA_ACUMULATIVAS.Views
             CargarClientes();
         }
 
-        // --- VALIDACIÓN: BLOQUEAR ESPACIOS (Para RFC y CURP) ---
+        // --- VALIDACIÓN VISUAL: BLOQUEAR ESPACIOS (Para RFC y CURP) ---
         private void TxtSinEspacios_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            // Si la tecla presionada es ESPACIO, cancelamos el evento
             if (e.Key == Key.Space)
             {
-                e.Handled = true; // Ignora la tecla espacio
+                e.Handled = true;
             }
         }
 
@@ -80,6 +81,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
         // --- 2. GUARDADO (CREATE / UPDATE) ---
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            // A) Validaciones de Campos Vacíos
             if (string.IsNullOrWhiteSpace(txtNombre.Text) || string.IsNullOrWhiteSpace(txtRFC.Text))
             {
                 MessageBox.Show("El Nombre y el RFC son obligatorios.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -92,13 +94,23 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 return;
             }
 
-            // CAMBIO: Ya no usamos ToUpper() en el nombre para respetar lo que el usuario escriba
-            string nombre = txtNombre.Text.Trim();
-
-            // RFC y CURP sí van en mayúsculas siempre (por estándar fiscal)
+            // B) Obtención de datos (Nombre libre, RFC/CURP en mayúsculas)
+            string nombre = txtNombre.Text.Trim(); // Se respeta minúsculas/mayúsculas del usuario
             string rfc = txtRFC.Text.Trim().ToUpper();
             string curp = txtCURP.Text.Trim().ToUpper();
             string tipoPersona = ((ComboBoxItem)cmbTipoPersona.SelectedItem).Tag.ToString();
+
+            // Validación de longitud de RFC
+            if (tipoPersona == "F" && rfc.Length != 13)
+            {
+                MessageBox.Show("El RFC de una Persona FÍSICA debe tener 13 caracteres.", "Formato Incorrecto", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (tipoPersona == "M" && rfc.Length != 12)
+            {
+                MessageBox.Show("El RFC de una Persona MORAL debe tener 12 caracteres.", "Formato Incorrecto", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             int idActual = 0;
             if (txtId.Text != "(Nuevo)")
@@ -106,12 +118,20 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 idActual = int.Parse(txtId.Text);
             }
 
+            // --- AQUÍ ESTÁ LA CORRECCIÓN QUE PEDISTE (MODO PREGUNTA) ---
             string mensajeDuplicado = ValidarDuplicado(nombre, rfc, idActual);
             if (!string.IsNullOrEmpty(mensajeDuplicado))
             {
-                MessageBox.Show(mensajeDuplicado, "Cliente Duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                // Agregamos la pregunta al final del mensaje
+                string mensajeFinal = mensajeDuplicado + "\n\n¿Desea registrarlo de todas formas?";
+
+                // Si el usuario dice que NO, nos salimos. Si dice que SÍ, el código sigue y guarda.
+                if (MessageBox.Show(mensajeFinal, "Confirmar Duplicado", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+                {
+                    return;
+                }
             }
+            // -----------------------------------------------------------
 
             try
             {
@@ -126,10 +146,12 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
             catch (SqlException sqlEx)
             {
+                // Si el usuario forzó el guardado pero el RFC ya existe (clave única en SQL), 
+                // la base de datos lanzará error y aquí lo atrapamos.
                 if (sqlEx.Number == 2601 || sqlEx.Number == 2627)
                 {
-                    MessageBox.Show($"El RFC '{rfc}' ya existe en la base de datos.\n\nNo se puede duplicar.",
-                                    "RFC Duplicado", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Imposible guardar: El RFC '{rfc}' ya está registrado en la base de datos y no se permiten duplicados exactos.",
+                                    "Error de Restricción", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
                 {
@@ -150,41 +172,41 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 {
                     if (conn.State != System.Data.ConnectionState.Open) conn.Open();
 
-                    string query = @"SELECT COUNT(*) FROM Clientes 
-                                     WHERE (Nombre = @Nombre OR RFC = @RFC) 
-                                     AND Id != @Id";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    // 1. Buscamos coincidencia EXACTA de RFC
+                    string queryRFC = "SELECT Nombre FROM Clientes WHERE RFC = @RFC AND Id != @Id";
+                    using (SqlCommand cmd = new SqlCommand(queryRFC, conn))
                     {
-                        cmd.Parameters.AddWithValue("@Nombre", nombre);
                         cmd.Parameters.AddWithValue("@RFC", rfc);
                         cmd.Parameters.AddWithValue("@Id", idExcluir);
-
-                        int count = (int)cmd.ExecuteScalar();
-
-                        if (count > 0)
+                        object result = cmd.ExecuteScalar();
+                        if (result != null)
                         {
-                            query = "SELECT Nombre, RFC, Activo FROM Clientes WHERE (Nombre = @Nombre OR RFC = @RFC) AND Id != @Id";
-                            cmd.CommandText = query;
+                            return $"El RFC ingresado ya pertenece al cliente: {result}.";
+                        }
+                    }
 
-                            using (SqlDataReader reader = cmd.ExecuteReader())
+                    // 2. Buscamos coincidencia FONÉTICA de Nombre (SOUNDEX)
+                    string queryNombre = @"SELECT Top 1 Nombre, RFC 
+                                           FROM Clientes 
+                                           WHERE SOUNDEX(Nombre) = SOUNDEX(@Nombre) 
+                                           AND Id != @Id";
+
+                    using (SqlCommand cmd = new SqlCommand(queryNombre, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Nombre", nombre);
+                        cmd.Parameters.AddWithValue("@Id", idExcluir);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
                             {
-                                if (reader.Read())
-                                {
-                                    string nombreEncontrado = reader["Nombre"].ToString();
-                                    string rfcEncontrado = reader["RFC"].ToString();
-                                    bool esActivo = (bool)reader["Activo"];
-                                    string estadoStr = esActivo ? "" : " (Cliente DESACTIVADO)";
+                                string nombreEncontrado = reader["Nombre"].ToString();
+                                string rfcEncontrado = reader["RFC"].ToString();
 
-                                    if (rfcEncontrado.ToUpper() == rfc)
-                                        return $"El RFC '{rfc}' ya está registrado{estadoStr}.\nPertenece a: {nombreEncontrado}";
-
-                                    // Comparación insensible a mayúsculas para el nombre
-                                    if (nombreEncontrado.Equals(nombre, StringComparison.OrdinalIgnoreCase))
-                                        return $"El nombre '{nombre}' ya existe{estadoStr}.\nRFC registrado: {rfcEncontrado}";
-                                }
+                                return $"¡ATENCIÓN! Se encontró un cliente con nombre fonéticamente similar:\n\n" +
+                                       $"Nombre: {nombreEncontrado}\n" +
+                                       $"RFC: {rfcEncontrado}";
                             }
-                            return "Ya existe un cliente con ese Nombre o RFC.";
                         }
                     }
                 }
@@ -194,7 +216,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 return "Error al validar duplicados: " + ex.Message;
             }
 
-            return null;
+            return null; // Todo limpio
         }
 
         private void EstablecerContextoUsuario(SqlConnection conn)
@@ -296,7 +318,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 txtNombre.Text = cliente.Nombre;
                 txtRFC.Text = cliente.RFC;
                 txtCURP.Text = cliente.CURP;
-                cmbTipoPersona.SelectedIndex = (cliente.TipoPersona == "F") ? 0 : 1;
+                // Mapeo simple para el combo
+                if (cliente.TipoPersona == "F") cmbTipoPersona.SelectedIndex = 0;
+                else if (cliente.TipoPersona == "M") cmbTipoPersona.SelectedIndex = 1;
             }
         }
 
