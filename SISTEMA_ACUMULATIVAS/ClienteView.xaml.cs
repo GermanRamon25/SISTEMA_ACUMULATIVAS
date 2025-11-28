@@ -336,5 +336,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 dgClientes.ItemsSource = filtrado;
             }
         }
+
+        private void cmbTipoPersona_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
     }
 }
