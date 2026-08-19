@@ -1,7 +1,7 @@
 ﻿using SISTEMA_ACUMULATIVAS.Conexion;
 using System;
 using System.Collections.Generic;
-using System.Data; // <--- AGREGADO: Necesario para CommandType.StoredProcedure
+using System.Data; 
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -17,9 +17,7 @@ using System.Windows.Shapes;
 
 namespace SISTEMA_ACUMULATIVAS
 {
-    /// <summary>
-    /// Lógica de interacción para LoginWindow.xaml
-    /// </summary>
+
     public partial class LoginWindow : Window
     {
         private ClsConexion _conexion;

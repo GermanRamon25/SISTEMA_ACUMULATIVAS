@@ -237,10 +237,10 @@
                     <ComboBox x:Name="cmbTipoOperacion" 
                               Style="{StaticResource ModernComboBoxStyle}">
                         <ComboBoxItem Content="Transmisión o constitución de derechos reales sobre inmuebles. 8000 UMA;"/>
-                        <ComboBoxItem Content="Constitución de personas morales."/>
+                        <ComboBoxItem Content="Otorgamiento de poderes para actos de administracion o dominio irrevocables."/>
                         <ComboBoxItem Content="Modificación patrimonial derivada de aumento o disminución de capital social."/>
                         <ComboBoxItem Content="Fusión o escisión de sociedades."/>
-                        <ComboBoxItem Content="Compraventa de acciones."/>
+                        <ComboBoxItem Content="Compraventa de acciones y partes sociales."/>
                         <ComboBoxItem Content="Constitución o modificación de fideicomisos. 4000 UMA."/>
                         <ComboBoxItem Content="Otra Actividad Vulnerable"/>
                     </ComboBox>
