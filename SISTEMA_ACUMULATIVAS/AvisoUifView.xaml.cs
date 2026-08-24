@@ -163,7 +163,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
         private List<Operacion> ObtenerDetalleOperaciones(SqlConnection conn, int clienteId, DateTime inicio, DateTime fin)
         {
             List<Operacion> lista = new List<Operacion>();
-            string query = @"SELECT FolioEscritura, TipoOperacion, Monto, FechaOperacion FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= @Inicio AND FechaOperacion <= @Fin ORDER BY FechaOperacion DESC";
+
+            // SE CAMBIA A ASCENDENTE PARA PODER SUMAR CRONOLÓGICAMENTE Y VER CUÁL SUPERÓ EL UMBRAL
+            string query = @"SELECT FolioEscritura, TipoOperacion, Monto, FechaOperacion FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= @Inicio AND FechaOperacion <= @Fin ORDER BY FechaOperacion ASC";
+
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {
                 cmd.Parameters.AddWithValue("@Id", clienteId);
@@ -183,7 +186,33 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     }
                 }
             }
-            return lista;
+
+            // --- LÓGICA PARA MARCAR LA OPERACIÓN DETONANTE ---
+            decimal sumaAcumulada = 0;
+            bool yaSuperoUmbral = false;
+
+            foreach (var op in lista)
+            {
+                sumaAcumulada += op.Monto;
+
+                // 1. Es operación societaria (Aviso obligatorio)
+                if (op.TipoOperacion.IndexOf("Compraventa de acciones", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    op.TipoOperacion.IndexOf("Constitución", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    op.EsDetonante = true;
+                    op.EtiquetaDetonante = "Aviso Obligatorio";
+                }
+                // 2. O es la operación que hace que la suma cruce el umbral
+                else if (!yaSuperoUmbral && sumaAcumulada >= UMBRAL_AVISO_GENERAL)
+                {
+                    op.EsDetonante = true;
+                    op.EtiquetaDetonante = "Supera Umbral Acumulado";
+                    yaSuperoUmbral = true; // Para solo marcar la primera que cruza el umbral
+                }
+            }
+
+            // Retornamos la lista ordenada de más reciente a más antigua (como lo tenías visualmente)
+            return lista.OrderByDescending(x => x.FechaOperacion).ToList();
         }
 
         private void dgClientesAviso_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -205,11 +234,16 @@ namespace SISTEMA_ACUMULATIVAS.Views
             string filasTabla = "";
             foreach (var op in item.OperacionesDetalle)
             {
+                // --- SE AGREGA LA ETIQUETA ROJA SI ES EL DETONANTE ---
+                string etiqueta = op.EsDetonante
+                    ? $"<br/><span style='color: #DC2626; font-size: 10px; font-weight: bold;'>[{op.EtiquetaDetonante.ToUpper()}]</span>"
+                    : "";
+
                 filasTabla += $@"
         <tr>
             <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'>{op.FechaOperacion:dd/MM/yyyy}</td>
             <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'><strong>{op.FolioEscritura}</strong></td>
-            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'>{op.TipoOperacion}</td>
+            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'>{op.TipoOperacion}{etiqueta}</td>
             <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0; text-align: right; font-weight: bold;'>{op.Monto:C}</td>
         </tr>";
             }
@@ -434,7 +468,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 try
                 {
-                    // 1. Ruta temporal para el archivo PDF (igual que en CertiScan)
+                    // 1. Ruta temporal para el archivo PDF
                     string rutaTemp = System.IO.Path.Combine(
                         System.IO.Path.GetTempPath(),
                         $"Ficha_Vulnerable_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"

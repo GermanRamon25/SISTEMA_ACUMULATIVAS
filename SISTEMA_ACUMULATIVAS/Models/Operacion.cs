@@ -20,5 +20,9 @@ namespace SISTEMA_ACUMULATIVAS.Models
 
         // Propiedades EXTRA (No están en la tabla Operaciones, pero sirven para mostrar datos en la Vista)
         public string ClienteNombre { get; set; } // Lo llenaremos con el JOIN
+
+        // --- NUEVAS PROPIEDADES PARA EL REPORTE UIF ---
+        public bool EsDetonante { get; set; }
+        public string EtiquetaDetonante { get; set; }
     }
 }

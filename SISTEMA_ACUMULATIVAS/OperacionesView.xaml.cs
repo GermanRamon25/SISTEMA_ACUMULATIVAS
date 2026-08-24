@@ -18,6 +18,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
         private List<Operacion> _operacionesCache;
         private int _idOperacionSeleccionada = 0;
 
+        // Bandera para evitar que la alerta salte cuando se selecciona un registro del Grid
+        private bool _seleccionAutomatica = false;
+
         // Lista maestra de clientes para el buscador predictivo
         private List<ClienteItem> _todosLosClientes;
         private int? _clienteSeleccionadoId = null;
@@ -131,6 +134,26 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 if (lstClientesSugeridos.Items.Count > 0)
                 {
                     lstClientesSugeridos.SelectedIndex = 0;
+                }
+            }
+        }
+
+        // --- NUEVO: ALERTA DE ACTIVIDAD VULNERABLE AL SELECCIONAR ---
+        private void cmbTipoOperacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Si la selección viene de cargar datos del Grid o de limpiar el formulario, no mostramos la alerta
+            if (_seleccionAutomatica) return;
+
+            if (cmbTipoOperacion.SelectedItem is ComboBoxItem cbItem)
+            {
+                string tipoOperacion = cbItem.Content is TextBlock tb ? tb.Text : cbItem.Content?.ToString();
+
+                if (!string.IsNullOrEmpty(tipoOperacion))
+                {
+                    MessageBox.Show($"¡ATENCIÓN!\n\nHa seleccionado:\n{tipoOperacion}\n\nEsta operación es catalogada como ACTIVIDAD VULNERABLE. Por favor, asegúrese de recabar la documentación de identificación requerida, aun si no se alcanza el umbral de UMAS para el aviso correspondiente.",
+                        "Alerta Ley Antilavado",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
                 }
             }
         }
@@ -314,6 +337,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 txtDescripcion.Text = item.Descripcion;
                 dpFechaOperacion.SelectedDate = item.FechaOperacion;
 
+                _seleccionAutomatica = true; // Pausamos la alerta
                 foreach (ComboBoxItem cbItem in cmbTipoOperacion.Items)
                 {
                     string texto = cbItem.Content is TextBlock tb ? tb.Text : cbItem.Content?.ToString();
@@ -323,6 +347,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         break;
                     }
                 }
+                _seleccionAutomatica = false; // Reactivamos la alerta
             }
         }
 
@@ -344,7 +369,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
             lblClienteSeleccionado.Text = "Ningún cliente seleccionado";
             lblClienteSeleccionado.Foreground = Brushes.Gray;
 
+            _seleccionAutomatica = true; // Pausamos la alerta
             cmbTipoOperacion.SelectedIndex = -1;
+            _seleccionAutomatica = false; // Reactivamos la alerta
+
             txtMonto.Clear();
             txtFolioEscritura.Clear();
             txtDescripcion.Clear();

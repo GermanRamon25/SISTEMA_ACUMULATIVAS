@@ -1,6 +1,4 @@
-﻿using LiveCharts;
-using LiveCharts.Wpf;
-using SISTEMA_ACUMULATIVAS.Conexion;
+﻿using SISTEMA_ACUMULATIVAS.Conexion;
 using SISTEMA_ACUMULATIVAS.Models;
 using System;
 using System.Collections.Generic;
@@ -14,27 +12,34 @@ namespace SISTEMA_ACUMULATIVAS.Views
 {
     public partial class AcumuladosView : UserControl
     {
-        // ELIMINADO: private const decimal VALOR_UMA = 113.14m;  <-- Ya no se usa fija
         private const int UMBRAL_IDENTIFICACION = 8000;
-
         private ClsConexion _conexion;
 
-        // Propiedades Gráfico 1 (Columnas - Montos)
-        public SeriesCollection SeriesClientes { get; set; }
-        public string[] LabelsClientes { get; set; }
-        public Func<double, string> Formatter { get; set; }
+        // --- MODELOS INTERNOS PARA LAS GRÁFICAS MANUALES ESTILO CORPORATIVO ---
+        public class ClienteGraficaItem
+        {
+            public string NombreCliente { get; set; }
+            public decimal Monto { get; set; }
+            public double AnchoBarraVirtual { get; set; }
+            public Brush ColorBarra { get; set; }
+            public Brush ColorTextoMonto { get; set; }
+        }
 
-        // Propiedades Gráfico 2 (Filas - Tipos de Operación)
-        public SeriesCollection SeriesTipoOperacion { get; set; }
-        public string[] LabelsTipos { get; set; }
-        public Func<double, string> FormatterCantidad { get; set; }
+        public class OperacionGraficaItem
+        {
+            public string TipoOperacion { get; set; }
+            public int Cantidad { get; set; }
+            public double AnchoBarraVirtual { get; set; }
+            public Brush ColorBarra { get; set; }
+        }
+
+        public List<ClienteGraficaItem> ListaGraficaClientes { get; set; }
+        public List<OperacionGraficaItem> ListaGraficaOperaciones { get; set; }
 
         public AcumuladosView()
         {
             InitializeComponent();
             _conexion = new ClsConexion();
-            Formatter = value => value.ToString("C0"); // Moneda
-            FormatterCantidad = value => value.ToString("N0"); // Números enteros
             DataContext = this;
         }
 
@@ -54,39 +59,40 @@ namespace SISTEMA_ACUMULATIVAS.Views
             CargarGraficoOperaciones(null);
         }
 
-        // --- 1. LÓGICA TABLA Y BARRAS (CLIENTES) ---
+        // --- 1. LÓGICA TABLA Y GRÁFICA DE CLIENTES (NUEVA REGLA DE NEGOCIO Y FECHA REAL) ---
         private void CargarTopClientesYAlertas()
         {
             List<Acumulado> listaAcumulados = new List<Acumulado>();
+            ListaGraficaClientes = new List<ClienteGraficaItem>();
 
-            // --- CAMBIO IMPORTANTE: UMA DINÁMICA ---
-            // Leemos el valor que configuraste en el Panel de Control
             ClsConfiguracion config = new ClsConfiguracion();
             decimal valorUmaActual = config.ObtenerUMA();
-
-            // Protección por si la BD devuelve 0 (primera vez)
             if (valorUmaActual == 0) valorUmaActual = 113.14m;
 
             decimal montoUmbral = valorUmaActual * UMBRAL_IDENTIFICACION;
 
-            // --- ACTUALIZACIÓN VISUAL (Aquí corregimos el error de que "no cambiaba el valor") ---
             if (lblInfoUma != null)
                 lblInfoUma.Text = $"Umbrales (UMA Actual: {valorUmaActual:C})";
 
             if (lblMontoLimite != null)
                 lblMontoLimite.Text = $"8,000 UMAs ({montoUmbral:C})";
-            // ------------------------------------------------------------------------------------
 
             try
             {
+                int clientesEnAlerta = 0;
+
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
+                    // --- CAMBIO APLICADO AQUÍ: Buscamos la MAX(FechaOperacion) real ---
                     string query = @"
-                        SELECT TOP 20 c.Id, c.Nombre, a.TotalAcumulado, a.UltimaActualizacion
+                        SELECT 
+                            c.Id, 
+                            c.Nombre, 
+                            a.TotalAcumulado, 
+                            ISNULL((SELECT MAX(FechaOperacion) FROM Operaciones WHERE ClienteId = c.Id), a.UltimaActualizacion) AS UltimaActividadReal
                         FROM Acumulados a
                         INNER JOIN Clientes c ON a.ClienteId = c.Id
-                        WHERE a.TotalAcumulado > 0
-                        ORDER BY a.TotalAcumulado DESC";
+                        WHERE a.TotalAcumulado > 0";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -98,12 +104,15 @@ namespace SISTEMA_ACUMULATIVAS.Views
                                 double porcentaje = (double)(total / montoUmbral);
                                 string estado = total >= montoUmbral ? "⚠️ UMBRAL ALCANZADO" : (porcentaje > 0.8 ? "Cerca del Límite" : "Normal");
 
+                                if (total >= montoUmbral) clientesEnAlerta++;
+
                                 listaAcumulados.Add(new Acumulado
                                 {
                                     ClienteId = (int)reader["Id"],
                                     ClienteNombre = reader["Nombre"].ToString(),
                                     MontoAcumulado = total,
-                                    UltimaActualizacion = (DateTime)reader["UltimaActualizacion"],
+                                    // --- CAMBIO APLICADO AQUÍ: Leemos 'UltimaActividadReal' ---
+                                    UltimaActualizacion = (DateTime)reader["UltimaActividadReal"],
                                     PorcentajeUmbral = porcentaje,
                                     EstadoAlerta = estado
                                 });
@@ -112,21 +121,42 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     }
                 }
 
+                lblTotalAlertas.Text = $"{clientesEnAlerta} Clientes";
+
+                // Ordenar toda la lista para la tabla (de mayor a menor)
+                listaAcumulados = listaAcumulados.OrderByDescending(x => x.MontoAcumulado).ToList();
                 dgAlertas.ItemsSource = listaAcumulados;
 
+                // --- NUEVA REGLA PARA LA GRÁFICA: TOP 10 + LOS QUE EXCEDAN EL UMBRAL ---
                 var top10 = listaAcumulados.Take(10).ToList();
-                SeriesClientes = new SeriesCollection
+                var excedenUmbral = listaAcumulados.Where(x => x.MontoAcumulado >= montoUmbral).ToList();
+
+                // Combinamos ambas listas, quitamos duplicados y ordenamos
+                var clientesParaGrafica = top10.Union(excedenUmbral)
+                                               .OrderByDescending(x => x.MontoAcumulado)
+                                               .ToList();
+
+                // Determinamos el monto mayor para que ocupe el 100% de la barra
+                decimal maxMonto = clientesParaGrafica.Any() ? clientesParaGrafica.Max(x => x.MontoAcumulado) : 1;
+                if (maxMonto == 0) maxMonto = 1;
+
+                double maxAnchoPixeles = 420; // Ajustado para que las barras tengan buen tamaño
+
+                foreach (var cliente in clientesParaGrafica)
                 {
-                    new ColumnSeries
+                    bool supero = cliente.MontoAcumulado >= montoUmbral;
+
+                    ListaGraficaClientes.Add(new ClienteGraficaItem
                     {
-                        Title = "Monto",
-                        Values = new ChartValues<decimal>(top10.Select(x => x.MontoAcumulado)),
-                        DataLabels = true,
-                        LabelPoint = point => point.Y.ToString("C0"),
-                        Fill = System.Windows.Media.Brushes.DodgerBlue
-                    }
-                };
-                LabelsClientes = top10.Select(x => x.ClienteNombre).ToArray();
+                        NombreCliente = cliente.ClienteNombre,
+                        Monto = cliente.MontoAcumulado,
+                        AnchoBarraVirtual = (double)(cliente.MontoAcumulado / maxMonto) * maxAnchoPixeles,
+                        // Asignamos degradados premium
+                        ColorBarra = supero ? ObtenerDegradadoRojo() : ObtenerDegradadoAzul(),
+                        ColorTextoMonto = supero ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#B91C1C"))
+                                                 : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A"))
+                    });
+                }
 
                 DataContext = null;
                 DataContext = this;
@@ -149,11 +179,11 @@ namespace SISTEMA_ACUMULATIVAS.Views
             CargarGraficoOperaciones(null);
         }
 
-        // --- 3. LÓGICA GRÁFICO TIPOS (AHORA BARRAS HORIZONTALES) ---
+        // --- 3. LÓGICA GRÁFICA TIPOS (BARRAS CORPORATIVAS) ---
         private void CargarGraficoOperaciones(int? clienteId, string nombreCliente = "")
         {
-            SeriesTipoOperacion = new SeriesCollection();
-            List<string> etiquetas = new List<string>();
+            ListaGraficaOperaciones = new List<OperacionGraficaItem>();
+            var tempList = new List<OperacionGraficaItem>();
 
             try
             {
@@ -165,46 +195,44 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                     if (clienteId.HasValue)
                     {
-                        // AQUÍ YA ESTÁ LA REGLA DE 6 MESES APLICADA EN LA CONSULTA VISUAL TAMBIÉN
-                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad ASC";
+                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad DESC";
                         cmd.Parameters.AddWithValue("@Id", clienteId.Value);
                         txtTituloPastel.Text = $"Operaciones de: {nombreCliente}";
                         btnVerGlobal.Visibility = Visibility.Visible;
                     }
                     else
                     {
-                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad ASC";
-                        txtTituloPastel.Text = "Operaciones por Tipo (Global)";
+                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad DESC";
+                        txtTituloPastel.Text = "Distribución Global de Actividades";
                         btnVerGlobal.Visibility = Visibility.Collapsed;
                     }
 
                     cmd.CommandText = query;
 
-                    var valores = new ChartValues<int>();
-
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            string tipo = reader["TipoOperacion"].ToString();
-                            if (tipo.Length > 35) tipo = tipo.Substring(0, 35) + "...";
-
-                            etiquetas.Add(tipo);
-                            valores.Add((int)reader["Cantidad"]);
+                            tempList.Add(new OperacionGraficaItem
+                            {
+                                TipoOperacion = reader["TipoOperacion"].ToString(),
+                                Cantidad = (int)reader["Cantidad"]
+                            });
                         }
                     }
+                }
 
-                    SeriesTipoOperacion.Add(new RowSeries
-                    {
-                        Title = "Cantidad",
-                        Values = valores,
-                        DataLabels = true,
-                        LabelPoint = point => point.X.ToString("N0"),
-                        Fill = (SolidColorBrush)new BrushConverter().ConvertFrom("#FF28A745"),
-                        RowPadding = 10
-                    });
+                int maxCantidad = tempList.Any() ? tempList.Max(x => x.Cantidad) : 1;
+                if (maxCantidad == 0) maxCantidad = 1;
 
-                    LabelsTipos = etiquetas.ToArray();
+                double maxAnchoPixeles = 350;
+                Brush colorSecundario = ObtenerDegradadoPurpura();
+
+                foreach (var op in tempList)
+                {
+                    op.AnchoBarraVirtual = ((double)op.Cantidad / maxCantidad) * maxAnchoPixeles;
+                    op.ColorBarra = colorSecundario; // Un color distinto para separar métricas
+                    ListaGraficaOperaciones.Add(op);
                 }
 
                 DataContext = null;
@@ -213,6 +241,35 @@ namespace SISTEMA_ACUMULATIVAS.Views
             catch { }
         }
 
+        // --- GENERADORES DE DEGRADADOS PARA EL DISEÑO CORPORATIVO ---
+        private LinearGradientBrush ObtenerDegradadoRojo()
+        {
+            LinearGradientBrush gradient = new LinearGradientBrush();
+            gradient.StartPoint = new Point(0, 0);
+            gradient.EndPoint = new Point(1, 0);
+            gradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#F87171"), 0.0));
+            gradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#DC2626"), 1.0));
+            return gradient;
+        }
 
+        private LinearGradientBrush ObtenerDegradadoAzul()
+        {
+            LinearGradientBrush gradient = new LinearGradientBrush();
+            gradient.StartPoint = new Point(0, 0);
+            gradient.EndPoint = new Point(1, 0);
+            gradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#38BDF8"), 0.0));
+            gradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#0284C7"), 1.0));
+            return gradient;
+        }
+
+        private LinearGradientBrush ObtenerDegradadoPurpura()
+        {
+            LinearGradientBrush gradient = new LinearGradientBrush();
+            gradient.StartPoint = new Point(0, 0);
+            gradient.EndPoint = new Point(1, 0);
+            gradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#818CF8"), 0.0));
+            gradient.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#4F46E5"), 1.0));
+            return gradient;
+        }
     }
 }

@@ -345,28 +345,15 @@
                               Tag="Seleccione el tipo de operación..."
                               Style="{StaticResource ModernOperacionesComboBoxStyle}"
                               SelectedIndex="-1"
-                              Margin="0,5,0,10">
-                        <ComboBoxItem>
-                            <TextBlock Text="Derechos Reales sobre Inmuebles (8,000 UMA)" TextWrapping="Wrap"/>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <TextBlock Text="Poderes Irrevocables de Administración o Dominio" TextWrapping="Wrap"/>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <TextBlock Text="Aumento o Disminución de Capital Social" TextWrapping="Wrap"/>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <TextBlock Text="Fusión o Escisión de Sociedades" TextWrapping="Wrap"/>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <TextBlock Text="Compraventa de Acciones y Partes Sociales" TextWrapping="Wrap"/>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <TextBlock Text="Constitución o Modificación de Fideicomisos (4,000 UMA)" TextWrapping="Wrap"/>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <TextBlock Text="Otra Actividad Vulnerable Notarial" TextWrapping="Wrap"/>
-                        </ComboBoxItem>
+                              Margin="0,5,0,10"
+                              SelectionChanged="cmbTipoOperacion_SelectionChanged">
+                        <ComboBoxItem Content="Derechos Reales sobre Inmuebles (8,000 UMA)"/>
+                        <ComboBoxItem Content="Poderes Irrevocables de Administración o Dominio"/>
+                        <ComboBoxItem Content="Aumento o Disminución de Capital Social"/>
+                        <ComboBoxItem Content="Fusión o Escisión de Sociedades"/>
+                        <ComboBoxItem Content="Compraventa de Acciones y Partes Sociales"/>
+                        <ComboBoxItem Content="Constitución o Modificación de Fideicomisos (4,000 UMA)"/>
+                        <ComboBoxItem Content="Otra Actividad Vulnerable Notarial"/>
                     </ComboBox>
 
                     <!-- MONTO -->

@@ -21,11 +21,16 @@ namespace SISTEMA_ACUMULATIVAS.Services
             {
                 foreach (var op in operaciones)
                 {
+                    // --- ETIQUETA ROJA DE DETONANTE ---
+                    string etiqueta = op.EsDetonante
+                        ? $"<br/><span style='color: #DC2626; font-size: 10.5px; font-weight: bold;'>[{op.EtiquetaDetonante.ToUpper()}]</span>"
+                        : "";
+
                     filasHtml.Append($@"
                         <tr>
                             <td>{op.FechaOperacion:dd/MM/yyyy}</td>
                             <td><strong>{op.FolioEscritura}</strong></td>
-                            <td>{op.TipoOperacion}</td>
+                            <td>{op.TipoOperacion}{etiqueta}</td>
                             <td style='text-align: right; font-weight: bold;'>{op.Monto:C}</td>
                         </tr>");
                 }
