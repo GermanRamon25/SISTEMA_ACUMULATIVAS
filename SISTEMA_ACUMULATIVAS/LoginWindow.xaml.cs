@@ -1,23 +1,11 @@
 ﻿using SISTEMA_ACUMULATIVAS.Conexion;
 using System;
-using System.Collections.Generic;
-using System.Data; 
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace SISTEMA_ACUMULATIVAS
 {
-
     public partial class LoginWindow : Window
     {
         private ClsConexion _conexion;
@@ -27,95 +15,151 @@ namespace SISTEMA_ACUMULATIVAS
         {
             InitializeComponent();
             _conexion = new ClsConexion();
-            txtUsuario.Focus(); // Pone el cursor en el campo de usuario al iniciar
+
+            // Poner foco en el campo de usuario al abrir la ventana
+            this.Loaded += (s, e) => txtUsuario.Focus();
         }
 
-        // --- Lógica de la Interfaz ---
+        // ============================================================
+        //              EVENTOS DE ARRASTRE DE VENTANA
+        // ============================================================
+
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == MouseButtonState.Pressed)
+            {
+                this.DragMove();
+            }
+        }
+
+        // ============================================================
+        //              EVENTOS DE TOGGLE PASSWORD
+        // ============================================================
+
+        private void chkMostrarPass_Checked(object sender, RoutedEventArgs e)
+        {
+            _passwordVisible = true;
+            txtPasswordVisible.Text = txtPassword.Password;
+            txtPassword.Visibility = Visibility.Collapsed;
+            txtPasswordVisible.Visibility = Visibility.Visible;
+            txtPasswordVisible.Focus();
+            txtPasswordVisible.CaretIndex = txtPasswordVisible.Text.Length;
+        }
+
+        private void chkMostrarPass_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _passwordVisible = false;
+            txtPassword.Password = txtPasswordVisible.Text;
+            txtPasswordVisible.Visibility = Visibility.Collapsed;
+            txtPassword.Visibility = Visibility.Visible;
+            txtPassword.Focus();
+        }
+
+        private void txtUsuario_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (txtErrorMessage.Visibility == Visibility.Visible)
+            {
+                txtErrorMessage.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // ============================================================
+        //              EVENTOS DE NAVEGACIÓN
+        // ============================================================
+
+        private void linkRegistro_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                RegistroWindow registroVentana = new RegistroWindow();
+                registroVentana.Owner = this;
+                registroVentana.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al abrir el registro: {ex.Message}",
+                                "Error",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+            }
+        }
 
         private void btnSalir_Click(object sender, RoutedEventArgs e)
         {
-            // Cierra la aplicación con un código de "cancelado"
-            this.Close();
-        }
+            var result = MessageBox.Show("¿Estás seguro de que deseas salir?",
+                                         "Confirmar salida",
+                                         MessageBoxButton.YesNo,
+                                         MessageBoxImage.Question);
 
-        // Permite mover la ventana al no tener barra de título
-        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            this.DragMove();
-        }
-
-        private void btnMostrarPass_Click(object sender, RoutedEventArgs e)
-        {
-            _passwordVisible = !_passwordVisible; // Invertir estado
-
-            if (_passwordVisible)
+            if (result == MessageBoxResult.Yes)
             {
-                // Mostrar contraseña
-                txtPasswordVisible.Text = txtPassword.Password;
-                txtPasswordVisible.Visibility = Visibility.Visible;
-                txtPassword.Visibility = Visibility.Collapsed;
-                btnMostrarPass.Content = "🙈";
-            }
-            else
-            {
-                // Ocultar contraseña
-                txtPassword.Password = txtPasswordVisible.Text;
-                txtPasswordVisible.Visibility = Visibility.Collapsed;
-                txtPassword.Visibility = Visibility.Visible;
-                btnMostrarPass.Content = "👁️";
+                Application.Current.Shutdown();
             }
         }
 
-        // --- Lógica de Negocio (Backend) ---
+        // ============================================================
+        //              LÓGICA DE INICIO DE SESIÓN
+        // ============================================================
 
         private void btnIniciarSesion_Click(object sender, RoutedEventArgs e)
         {
             string usuario = txtUsuario.Text.Trim();
-            // Leemos del control que esté visible
             string password = _passwordVisible ? txtPasswordVisible.Text : txtPassword.Password;
 
             if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Por favor, ingrese usuario y contraseña.", "Campos Vacíos", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MostrarError("Por favor, ingresa usuario y contraseña.");
                 return;
             }
 
             try
             {
+                // Verificar conexión a la BD
+                if (!_conexion.TestConnection())
+                {
+                    MostrarError("No se pudo conectar a la base de datos. Verifica tu conexión SQL.");
+                    return;
+                }
+
+                // Validar usuario
                 if (ValidarUsuario(usuario, password))
                 {
-                    // --- NUEVO: MANTENIMIENTO AUTOMÁTICO (REGLA 6 MESES) ---
-                    // Antes de cerrar el login, recalculamos los saldos para que 
-                    // lo que tenga más de 6 meses se reste automáticamente.
                     EjecutarMantenimientoDiario();
-                    // -------------------------------------------------------
 
-                    // Si la validación es exitosa, cerramos el login.
-                    // El formulario principal (App.xaml.cs) debe manejar esto.
-                    this.DialogResult = true; // Marcamos como OK
-                    this.Close(); // Cerramos esta ventana
+                    this.DialogResult = true;
+                    this.Close();
                 }
                 else
                 {
-                    MessageBox.Show("Usuario o contraseña incorrectos.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MostrarError("Usuario o contraseña incorrectos.");
                     txtPassword.Clear();
                     txtPasswordVisible.Clear();
                     txtUsuario.Focus();
+                    txtUsuario.SelectAll();
                 }
+            }
+            catch (SqlException sqlEx)
+            {
+                MostrarError($"Error de base de datos: {sqlEx.Message}");
             }
             catch (Exception ex)
             {
-                // Captura errores de conexión a la BD
-                MessageBox.Show(ex.Message, "Error de Conexión", MessageBoxButton.OK, MessageBoxImage.Stop);
+                MostrarError($"Error inesperado: {ex.Message}");
             }
         }
 
+        // ============================================================
+        //              LÓGICA DE VALIDACIÓN
+        // ============================================================
+
         private bool ValidarUsuario(string usuario, string password)
         {
-            // Esta lógica es idéntica a la de WinForms, ¡perfecto!
             using (SqlConnection conn = _conexion.GetConnection())
             {
-                string query = "SELECT Id, PasswordHash, PasswordSalt, Rol, NombreCompleto FROM Usuarios WHERE Usuario = @usuario AND Activo = 1";
+                string query = @"
+                    SELECT Id, PasswordHash, PasswordSalt, Rol, NombreCompleto 
+                    FROM Usuarios 
+                    WHERE Usuario = @usuario AND Activo = 1";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -123,7 +167,7 @@ namespace SISTEMA_ACUMULATIVAS
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        if (reader.Read()) // ¿Encontramos al usuario?
+                        if (reader.Read())
                         {
                             int idUsuario = (int)reader["Id"];
                             byte[] hashGuardado = (byte[])reader["PasswordHash"];
@@ -131,7 +175,6 @@ namespace SISTEMA_ACUMULATIVAS
                             string rolUsuario = reader["Rol"].ToString();
                             string nombreUsuario = reader["NombreCompleto"].ToString();
 
-                            // Verificar el hash
                             if (ClsSeguridad.VerificarPasswordHash(password, hashGuardado, saltGuardado))
                             {
                                 ClsSesion.IniciarSesion(idUsuario, nombreUsuario, rolUsuario);
@@ -141,37 +184,41 @@ namespace SISTEMA_ACUMULATIVAS
                     }
                 }
             }
-            return false; // Usuario no encontrado o contraseña incorrecta
+            return false;
         }
 
-        // --- NUEVO MÉTODO AGREGADO ---
+        // ============================================================
+        //              MANTENIMIENTO DIARIO (6 MESES)
+        // ============================================================
+
         private void EjecutarMantenimientoDiario()
         {
             try
             {
-                // Abre una conexión rápida para ejecutar el Stored Procedure de limpieza
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    // Asegúrate de haber creado el procedimiento 'sp_RecalcularAcumuladosDiarios' en SQL primero
                     using (SqlCommand cmd = new SqlCommand("sp_RecalcularAcumuladosDiarios", conn))
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.CommandTimeout = 120;
                         cmd.ExecuteNonQuery();
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Si falla el mantenimiento (ej. no existe el SP todavía), no bloqueamos el Login.
-                // Solo lo ignoramos o podríamos usar Debug.WriteLine(ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Error en mantenimiento de acumulados: {ex.Message}");
             }
         }
 
-        // Este método es para el link de registro
-        private void linkRegistro_Click(object sender, RoutedEventArgs e)
+        // ============================================================
+        //              MÉTODOS DE AYUDA (UI)
+        // ============================================================
+
+        private void MostrarError(string mensaje)
         {
-            RegistroWindow registroVentana = new RegistroWindow();
-            registroVentana.ShowDialog();
+            txtErrorMessage.Text = mensaje;
+            txtErrorMessage.Visibility = Visibility.Visible;
         }
     }
 }

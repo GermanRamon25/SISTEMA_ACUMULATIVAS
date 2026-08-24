@@ -28,5 +28,25 @@ namespace SISTEMA_ACUMULATIVAS.Conexion
                 throw new Exception("Error al conectar con la base de datos: " + ex.Message, ex);
             }
         }
+        public bool TestConnection()
+        {
+            try
+            {
+                using (SqlConnection conn = GetConnection())
+                {
+                    // GetConnection() ya abre la conexión, 
+                    // o puedes asegurar con:
+                    if (conn.State != System.Data.ConnectionState.Open)
+                    {
+                        conn.Open();
+                    }
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
