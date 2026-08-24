@@ -1,0 +1,53 @@
+﻿<Window x:Class="SISTEMA_ACUMULATIVAS.ImportarClientesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Importar Catálogo de Clientes desde Excel" 
+        Height="550" Width="850"
+        WindowStartupLocation="CenterScreen"
+        Background="#F4F6F9">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Encabezado -->
+        <TextBlock Grid.Row="0" Text="Carga Masiva de Clientes Históricos" 
+                   FontSize="20" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,10"/>
+
+        <!-- Barra de selección de archivo -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,15">
+            <Button x:Name="BtnSeleccionarArchivo" Content="📂 Seleccionar Archivo Excel" 
+                    Width="200" Height="36" FontWeight="SemiBold"
+                    Background="#2563EB" Foreground="White" BorderThickness="0"
+                    Click="BtnSeleccionarArchivo_Click"/>
+            <TextBlock x:Name="TxtRutaArchivo" Text="Ningún archivo seleccionado..." 
+                       VerticalAlignment="Center" Margin="15,0,0,0" Foreground="#64748B" FontStyle="Italic"/>
+        </StackPanel>
+
+        <!-- Tabla de Vista Previa -->
+        <DataGrid Grid.Row="2" x:Name="DgVistaPrevia" AutoGenerateColumns="True"
+                  CanUserAddRows="False" IsReadOnly="True"
+                  Background="White" BorderBrush="#CBD5E1" BorderThickness="1"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                  HorizontalGridLinesBrush="#E2E8F0" RowHeight="28"/>
+
+        <!-- Estado y conteo -->
+        <TextBlock Grid.Row="3" x:Name="TxtConteo" Text="Registros listos para validar: 0" 
+                   Margin="0,10,0,10" FontWeight="Bold" Foreground="#334155"/>
+
+        <!-- Botones de Acción -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button x:Name="BtnCancelar" Content="Cancelar" Width="120" Height="38" 
+                    Background="#94A3B8" Foreground="White" BorderThickness="0" Margin="0,0,10,0"
+                    Click="BtnCancelar_Click"/>
+            <Button x:Name="BtnGuardar" Content="💾 Guardar en Base de Datos" Width="220" Height="38" 
+                    Background="#16A34A" Foreground="White" FontWeight="Bold" BorderThickness="0"
+                    Click="BtnGuardar_Click" IsEnabled="False"/>
+        </StackPanel>
+    </Grid>
+</Window>

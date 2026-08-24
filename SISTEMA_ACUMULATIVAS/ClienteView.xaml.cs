@@ -339,7 +339,65 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
         private void cmbTipoPersona_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
+            if (cmbTipoPersona.SelectedItem is ComboBoxItem itemSeleccionado && txtRFC != null)
+            {
+                string tag = itemSeleccionado.Tag?.ToString();
+                if (tag == "M")
+                {
+                    txtRFC.MaxLength = 12;
+                    // Si tenía 13 y cambiaron a Moral, recortamos el último carácter
+                    if (txtRFC.Text.Length > 12)
+                    {
+                        txtRFC.Text = txtRFC.Text.Substring(0, 12);
+                    }
+                }
+                else // Persona Física
+                {
+                    txtRFC.MaxLength = 13;
+                }
+            }
         }
+
+        private void BtnImportarExcel_Click(object sender, RoutedEventArgs e)
+        {
+            ImportarClientesWindow ventanaImportar = new ImportarClientesWindow();
+            if (ventanaImportar.ShowDialog() == true)
+            {
+                // Vuelve a cargar tu lista de clientes en ClienteView
+                CargarClientes();
+            }
+        }
+
+        private void BtnImportarClientes_Click(object sender, RoutedEventArgs e)
+        {
+            // 1. Abrimos la ventana de importación como diálogo modal
+            ImportarClientesWindow ventanaImportar = new ImportarClientesWindow();
+
+            // 2. Si el usuario guardó los clientes con éxito (DialogResult == true)
+            if (ventanaImportar.ShowDialog() == true)
+            {
+                // 3. Llamas al método que usas en ClienteView para refrescar el DataGrid
+                // (por ejemplo: CargarClientes(); o CargarDatos();)
+                CargarClientes();
+            }
+        }
+
+        private void txtRFC_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string rfc = txtRFC.Text.Trim().ToUpper();
+
+            // Si tiene 12 caracteres, preseleccionar Persona Moral
+            if (rfc.Length == 12)
+            {
+                cmbTipoPersona.SelectedIndex = 1; // Persona Moral
+            }
+            // Si tiene 13 caracteres, preseleccionar Persona Física
+            else if (rfc.Length == 13)
+            {
+                cmbTipoPersona.SelectedIndex = 0; // Persona Física
+            }
+        }
+
+
     }
 }

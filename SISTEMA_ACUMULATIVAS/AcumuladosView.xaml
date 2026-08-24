@@ -5,134 +5,264 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              mc:Ignorable="d" 
-             d:DesignHeight="700" d:DesignWidth="1200"
-             Background="#FFF0F4F8" Loaded="UserControl_Loaded">
+             d:DesignHeight="750" d:DesignWidth="1200"
+             Background="#F1F5F9" Loaded="UserControl_Loaded">
 
-    <Grid Margin="10">
+    <UserControl.Resources>
+        <!-- Sombra suave para tarjetas -->
+        <DropShadowEffect x:Key="CardShadow" Color="#64748B" Direction="270" ShadowDepth="2" BlurRadius="8" Opacity="0.12"/>
+
+        <!-- Estilo para Encabezados del DataGrid -->
+        <Style TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+        </Style>
+
+        <!-- Estilo para Filas del DataGrid con Selección Clara -->
+        <Style TargetType="{x:Type DataGridRow}">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F1F5F9"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#E0F2FE"/>
+                    <Setter Property="Foreground" Value="#0369A1"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20,15,20,15">
         <Grid.RowDefinitions>
+            <!-- Fila 0: Barra Superior / KPIs -->
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="3*"/>
+            <!-- Fila 1: Gráficas de Análisis -->
+            <RowDefinition Height="1.1*"/>
+            <!-- Fila 2: Tabla de Alertas -->
+            <RowDefinition Height="1.2*"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,10">
+        <!-- ==================== FILA 0: TARJETAS KPI Y BOTÓN ==================== -->
+        <Grid Grid.Row="0" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="15">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock x:Name="lblInfoUma" Text="Cargando valor UMA..." 
-                               FontSize="14" FontWeight="Bold" Foreground="#FF007BFF" 
-                               VerticalAlignment="Center" Margin="0,0,20,0"/>
-
-                    <Border Background="#FFFFF3CD" BorderBrush="#FFEEBA00" BorderThickness="1" Padding="15,5" CornerRadius="5">
-                        <StackPanel>
-                            <TextBlock Text="ALERTA (IDENTIFICACIÓN)" FontSize="10" FontWeight="Bold" Foreground="#664D00"/>
-                            <TextBlock x:Name="lblMontoLimite" Text="Calculando..." 
-                                       FontSize="14" FontWeight="Bold" Foreground="#664D00" HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+            <!-- KPI 1: Umbral UMA -->
+            <Border Grid.Column="0" Background="White" CornerRadius="10" Padding="15,12" Margin="0,0,12,0" Effect="{StaticResource CardShadow}">
+                <StackPanel>
+                    <TextBlock Text="ALERTA (IDENTIFICACIÓN)" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                    <TextBlock x:Name="lblMontoLimite" Text="8,000 UMAs ($905,120.00)" FontSize="18" FontWeight="ExtraBold" Foreground="#0284C7" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
-            <Button Grid.Column="1" x:Name="btnActualizar" Content="🔄 Actualizar Datos" 
-                    Margin="10,0,0,0" Padding="15,0" Background="#FF007BFF" Foreground="White"
-                    FontWeight="Bold" BorderThickness="0" Cursor="Hand" Click="btnActualizar_Click">
+            <!-- KPI 2: Clientes en Alerta -->
+            <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="15,12" Margin="0,0,12,0" Effect="{StaticResource CardShadow}">
+                <StackPanel>
+                    <TextBlock Text="ALERTAS ACTIVAS (REBASE)" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                    <TextBlock x:Name="lblTotalAlertas" Text="0 Clientes" FontSize="18" FontWeight="ExtraBold" Foreground="#DC2626" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- KPI 3: UMA Diaria Oficial -->
+            <Border Grid.Column="2" Background="White" CornerRadius="10" Padding="15,12" Margin="0,0,15,0" Effect="{StaticResource CardShadow}">
+                <StackPanel>
+                    <TextBlock Text="VALOR DIARIO UMA" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                    <TextBlock x:Name="lblInfoUma" Text="Umbrales (UMA Actual: $113.14)" FontSize="18" FontWeight="ExtraBold" Foreground="#16A34A" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Botón de Actualizar -->
+            <Button x:Name="btnActualizar" Grid.Column="3" 
+                    Content="🔄 Actualizar Datos" 
+                    Height="46" Width="170"
+                    Background="#0284C7" Foreground="White" 
+                    FontWeight="Bold" FontSize="13" 
+                    BorderThickness="0" Cursor="Hand"
+                    Click="btnActualizar_Click">
                 <Button.Resources>
                     <Style TargetType="Border">
-                        <Setter Property="CornerRadius" Value="5"/>
+                        <Setter Property="CornerRadius" Value="8"/>
                     </Style>
                 </Button.Resources>
             </Button>
         </Grid>
 
-        <Grid Grid.Row="1" Margin="0,0,0,10">
+        <!-- ==================== FILA 1: GRÁFICAS DE ANÁLISIS ==================== -->
+        <Grid Grid.Row="1" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*"/>
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="White" CornerRadius="5" Padding="15" Margin="0,0,5,0">
+            <!-- Gráfica Izquierda: Top 10 Clientes -->
+            <Border Grid.Column="0" Background="White" CornerRadius="10" Padding="18" Margin="0,0,10,0" Effect="{StaticResource CardShadow}">
                 <Grid>
-                    <TextBlock Text="Top 10 Clientes (Mayor Acumulado)" FontSize="16" FontWeight="Bold" Foreground="#FF007BFF" VerticalAlignment="Top"/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                    <lvc:CartesianChart Series="{Binding SeriesClientes}" LegendLocation="None" Margin="0,30,0,0">
-                        <lvc:CartesianChart.AxisY>
-                            <lvc:Axis Title="Monto ($)" LabelFormatter="{Binding Formatter}"/>
-                        </lvc:CartesianChart.AxisY>
+                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Top 10 Clientes (Mayor Acumulado)" FontSize="15" FontWeight="Bold" Foreground="#1E293B"/>
+                        <TextBlock Text="Montos acumulados en la ventana de 6 meses" FontSize="11" Foreground="#64748B"/>
+                    </StackPanel>
+
+                    <!-- Control Chart LiveCharts Enlazado a SeriesClientes -->
+                    <lvc:CartesianChart x:Name="chartTopClientes" Grid.Row="1" Margin="0,5,0,0" Series="{Binding SeriesClientes}">
                         <lvc:CartesianChart.AxisX>
                             <lvc:Axis Labels="{Binding LabelsClientes}" LabelsRotation="15">
                                 <lvc:Axis.Separator>
-                                    <lvc:Separator Step="1"/>
+                                    <lvc:Separator Step="1" IsEnabled="False"/>
                                 </lvc:Axis.Separator>
                             </lvc:Axis>
                         </lvc:CartesianChart.AxisX>
+                        <lvc:CartesianChart.AxisY>
+                            <lvc:Axis LabelFormatter="{Binding Formatter}"/>
+                        </lvc:CartesianChart.AxisY>
                     </lvc:CartesianChart>
                 </Grid>
             </Border>
 
-            <Border Grid.Column="1" Background="White" CornerRadius="5" Padding="15" Margin="5,0,0,0">
+            <!-- Gráfica Derecha: Operaciones por Tipo -->
+            <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="18" Margin="10,0,0,0" Effect="{StaticResource CardShadow}">
                 <Grid>
-                    <StackPanel VerticalAlignment="Top">
-                        <TextBlock x:Name="txtTituloPastel" Text="Operaciones por Tipo (Global)" 
-                                   FontSize="16" FontWeight="Bold" Foreground="#FF007BFF" TextWrapping="Wrap"/>
-                        <Button x:Name="btnVerGlobal" Content="Ver Global" Visibility="Collapsed"
-                                HorizontalAlignment="Left" Margin="0,5,0,0" Padding="10,2" 
-                                Background="#FF6C757D" Foreground="White" BorderThickness="0" 
-                                FontSize="10" Cursor="Hand" Click="btnVerGlobal_Click"/>
-                    </StackPanel>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                    <lvc:CartesianChart Series="{Binding SeriesTipoOperacion}" LegendLocation="None" Margin="0,40,0,0">
-                        <lvc:CartesianChart.AxisX>
-                            <lvc:Axis Title="Cantidad" LabelFormatter="{Binding FormatterCantidad}"/>
-                        </lvc:CartesianChart.AxisX>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                        <!-- Botón para regresar a vista global -->
+                        <Button x:Name="btnVerGlobal" DockPanel.Dock="Right" 
+                                Content="✕ Ver Global" 
+                                Height="26" Padding="8,0"
+                                Background="#E2E8F0" Foreground="#475569" 
+                                FontWeight="SemiBold" FontSize="11" 
+                                BorderThickness="0" Cursor="Hand"
+                                Visibility="Collapsed"
+                                Click="btnVerGlobal_Click">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <StackPanel>
+                            <TextBlock x:Name="txtTituloPastel" Text="Operaciones por Tipo (Global)" FontSize="15" FontWeight="Bold" Foreground="#1E293B"/>
+                            <TextBlock Text="Frecuencia de actividades vulnerables registradas" FontSize="11" Foreground="#64748B"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Control Chart LiveCharts Enlazado a SeriesTipoOperacion -->
+                    <lvc:CartesianChart x:Name="chartTiposOperacion" Grid.Row="1" Margin="0,5,0,0" Series="{Binding SeriesTipoOperacion}">
                         <lvc:CartesianChart.AxisY>
                             <lvc:Axis Labels="{Binding LabelsTipos}">
                                 <lvc:Axis.Separator>
-                                    <lvc:Separator Step="1"/>
+                                    <lvc:Separator Step="1" IsEnabled="False"/>
                                 </lvc:Axis.Separator>
                             </lvc:Axis>
                         </lvc:CartesianChart.AxisY>
+                        <lvc:CartesianChart.AxisX>
+                            <lvc:Axis LabelFormatter="{Binding FormatterCantidad}"/>
+                        </lvc:CartesianChart.AxisX>
                     </lvc:CartesianChart>
                 </Grid>
             </Border>
         </Grid>
 
-        <Border Grid.Row="2" Background="White" CornerRadius="5" Padding="15">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Alertas de Acumulación (Seleccione un cliente para filtrar el gráfico derecho)" 
-                           FontSize="16" FontWeight="Bold" Foreground="#FFDC3545" Margin="0,0,0,10"/>
+        <!-- ==================== FILA 2: TABLA DE ALERTAS Y SEGUIMIENTO ==================== -->
+        <Border Grid.Row="2" Background="White" CornerRadius="10" Padding="20,15" Effect="{StaticResource CardShadow}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                <DataGrid x:Name="dgAlertas" AutoGenerateColumns="False" IsReadOnly="True" 
-                          SelectionMode="Single" SelectionChanged="dgAlertas_SelectionChanged">
+                <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,12">
+                    <TextBlock Text="Alertas de Acumulación" 
+                               FontSize="16" FontWeight="Bold" Foreground="#1E293B" VerticalAlignment="Center"/>
+                    <TextBlock Text=" (Seleccione un cliente para filtrar el gráfico derecho)" 
+                               FontSize="12" FontStyle="Italic" Foreground="#DC2626" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- DataGrid con las propiedades exactas de tu clase Acumulado -->
+                <DataGrid x:Name="dgAlertas" Grid.Row="1"
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True" 
+                          SelectionMode="Single"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#E2E8F0"
+                          BorderThickness="1"
+                          BorderBrush="#CBD5E1"
+                          SelectionChanged="dgAlertas_SelectionChanged">
                     <DataGrid.Columns>
+                        <!-- 1. Nombre del Cliente -->
                         <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNombre}" Width="*"/>
-                        <DataGridTextColumn Header="Acumulado" Binding="{Binding MontoAcumulado, StringFormat=C}" Width="140"/>
-                        <DataGridTextColumn Header="% Límite" Binding="{Binding PorcentajeUmbral, StringFormat={}{0:P0}}" Width="80"/>
-                        <DataGridTextColumn Header="Estado" Binding="{Binding EstadoAlerta}" Width="180">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding EstadoAlerta}" Value="⚠️ UMBRAL ALCANZADO">
-                                            <Setter Property="Foreground" Value="Red"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding EstadoAlerta}" Value="Cerca del Límite">
-                                            <Setter Property="Foreground" Value="Orange"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding EstadoAlerta}" Value="Normal">
-                                            <Setter Property="Foreground" Value="Green"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-                        <DataGridTextColumn Header="Última Act." Binding="{Binding UltimaActualizacion, StringFormat='dd/MM HH:mm'}" Width="120"/>
+
+                        <!-- 2. Monto Acumulado -->
+                        <DataGridTextColumn Header="Acumulado" Binding="{Binding MontoAcumulado, StringFormat='C'}" Width="160"/>
+
+                        <!-- 3. Porcentaje Umbral -->
+                        <DataGridTextColumn Header="% Límite" Binding="{Binding PorcentajeUmbral, StringFormat='{}{0:P0}'}" Width="100"/>
+
+                        <!-- 4. Estado / Alerta con badge visual dinámico -->
+                        <DataGridTemplateColumn Header="Estado" Width="180">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="4" Padding="8,3" HorizontalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#DCFCE7"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding EstadoAlerta}" Value="⚠️ UMBRAL ALCANZADO">
+                                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding EstadoAlerta}" Value="Cerca del Límite">
+                                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding EstadoAlerta}" FontWeight="Bold" FontSize="11">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#15803D"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding EstadoAlerta}" Value="⚠️ UMBRAL ALCANZADO">
+                                                            <Setter Property="Foreground" Value="#B91C1C"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding EstadoAlerta}" Value="Cerca del Límite">
+                                                            <Setter Property="Foreground" Value="#B45309"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- 5. Fecha de Última Actualización -->
+                        <DataGridTextColumn Header="Última Act." Binding="{Binding UltimaActualizacion, StringFormat='dd/MM/yyyy HH:mm'}" Width="140"/>
                     </DataGrid.Columns>
                 </DataGrid>
-            </DockPanel>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

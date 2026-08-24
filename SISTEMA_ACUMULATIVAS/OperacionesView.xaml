@@ -8,7 +8,6 @@
              d:DesignHeight="600" d:DesignWidth="1200"
              Background="#FFF0F4F8" Loaded="UserControl_Loaded">
 
-    <!-- RECURSOS (ESTILOS MODERNOS importados de ClienteView) -->
     <UserControl.Resources>
 
         <!-- Estilo General para Campos de Entrada (TextBox) -->
@@ -47,80 +46,136 @@
             </Setter>
         </Style>
 
-        <!-- ESTILO ESPECÍFICO PARA COMBOBOX -->
-        <Style TargetType="{x:Type ComboBox}" x:Key="ModernComboBoxStyle">
-            <Setter Property="Padding" Value="5"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#FFCCCCCC"/>
-            <Setter Property="Margin" Value="0,5,0,10"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <!-- ESTILO MODERNO PARA ELEMENTOS DEL COMBOBOX -->
+        <Style TargetType="{x:Type ComboBoxItem}">
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                        <Border x:Name="ItemBorder" Background="Transparent" Padding="{TemplateBinding Padding}" CornerRadius="4" Margin="2">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#EBF3FF"/>
+                                <Setter Property="Foreground" Value="#007BFF"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#007BFF"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ESTILO COMBOBOX BASE CON PLACEHOLDER -->
+        <Style TargetType="{x:Type ComboBox}" x:Key="ModernOperacionesComboBoxStyle">
+            <Setter Property="Padding" Value="10,0"/>
             <Setter Property="Height" Value="38"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
-                            <Border x:Name="border" 
-                                    CornerRadius="5" 
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    SnapsToDevicePixels="True">
-
+                            <Border x:Name="Border" 
+                                    Background="White" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    CornerRadius="5">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="30"/>
+                                        <ColumnDefinition Width="32"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- Contenido seleccionado (texto) -->
-                                    <ContentPresenter Grid.Column="0" IsHitTestVisible="False" Margin="5,0,0,0"
-                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
-                                                      Content="{TemplateBinding SelectionBoxItem}"
-                                                      ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
-                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-
-                                    <!-- ToggleButton simplificado para la flecha -->
-                                    <ToggleButton Grid.Column="1" 
-                                                  IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
-                                                  Style="{x:Null}" Focusable="False" 
-                                                  Background="Transparent" BorderThickness="0">
-                                        <Path x:Name="Arrow" Data="M 0 0 L 4 4 L 8 0 Z" 
-                                              HorizontalAlignment="Center" 
-                                              VerticalAlignment="Center" 
-                                              Fill="#FF666666" 
-                                              Margin="0,0,5,0"
-                                              RenderTransformOrigin="0.5,0.5"/>
+                                    <ToggleButton Grid.Column="0" Grid.ColumnSpan="2" 
+                                                  Background="Transparent" 
+                                                  BorderThickness="0" 
+                                                  Focusable="False" 
+                                                  IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                                <Border Background="Transparent">
+                                                    <Path x:Name="Arrow" 
+                                                          Data="M 0 0 L 4 4 L 8 0 Z" 
+                                                          Fill="#666666" 
+                                                          HorizontalAlignment="Right" 
+                                                          VerticalAlignment="Center" 
+                                                          Margin="0,0,12,0"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
                                     </ToggleButton>
+
+                                    <!-- Placeholder -->
+                                    <TextBlock x:Name="PlaceholderText"
+                                               Grid.Column="0"
+                                               Text="{TemplateBinding Tag}"
+                                               Foreground="#999999"
+                                               FontStyle="Italic"
+                                               VerticalAlignment="Center"
+                                               Margin="{TemplateBinding Padding}"
+                                               IsHitTestVisible="False"
+                                               Visibility="Collapsed"/>
+
+                                    <ContentPresenter Grid.Column="0" 
+                                                      Margin="{TemplateBinding Padding}" 
+                                                      VerticalAlignment="Center" 
+                                                      HorizontalAlignment="Left"
+                                                      IsHitTestVisible="False"
+                                                      Content="{TemplateBinding SelectionBoxItem}" 
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"/>
                                 </Grid>
                             </Border>
 
-                            <!-- Popup para la lista desplegable -->
-                            <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom" 
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   StaysOpen="False" Focusable="False"
-                                   PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}">
-                                <Border x:Name="dropDownBorder" 
-                                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                        MinHeight="{TemplateBinding MinHeight}"
-                                        Background="White"
-                                        BorderBrush="#FFCCCCCC"
-                                        BorderThickness="1"
-                                        CornerRadius="5"
-                                        Padding="1">
-                                    <ScrollViewer x:Name="ScrollViewer" Margin="0" Style="{x:Null}">
-                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                            <Popup x:Name="PART_Popup" 
+                                   AllowsTransparency="True" 
+                                   Placement="Bottom" 
+                                   IsOpen="{TemplateBinding IsDropDownOpen}" 
+                                   StaysOpen="False" 
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Border x:Name="DropDownBorder" 
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" 
+                                        MaxHeight="260" 
+                                        Background="White" 
+                                        BorderBrush="#CCCCCC" 
+                                        BorderThickness="1" 
+                                        CornerRadius="5" 
+                                        Margin="0,3,0,0"
+                                        Padding="4">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#888888" Direction="270" ShadowDepth="3" BlurRadius="6" Opacity="0.25"/>
+                                    </Border.Effect>
+                                    <ScrollViewer Margin="0" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
                                     </ScrollViewer>
                                 </Border>
                             </Popup>
                         </Grid>
+
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="#FF007BFF"/>
+                            <Trigger Property="SelectedIndex" Value="-1">
+                                <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible"/>
                             </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="#FF007BFF"/>
-                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                            <Trigger Property="SelectedItem" Value="{x:Null}">
+                                <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#007BFF"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#007BFF"/>
+                                <Setter TargetName="Border" Property="BorderThickness" Value="1.5"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -140,17 +195,15 @@
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Border x:Name="Border" 
                                 CornerRadius="8" 
-                                Background="{TemplateBinding Background}"
+                                Background="{TemplateBinding Background}" 
                                 BorderThickness="0">
                             <Border.Effect>
-                                <!-- Sombra sutil para efecto moderno -->
                                 <DropShadowEffect Color="#FFBBBBBB" Direction="270" ShadowDepth="2" BlurRadius="5" Opacity="0.5"/>
                             </Border.Effect>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <!-- Efecto de elevación al pasar el mouse -->
                                 <Setter TargetName="Border" Property="Background" 
                                         Value="{Binding Path=Background, RelativeSource={RelativeSource Mode=Self}}"/>
                                 <Setter TargetName="Border" Property="Effect">
@@ -160,7 +213,6 @@
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <!-- Efecto de presión/click -->
                                 <Setter TargetName="Border" Property="RenderTransform">
                                     <Setter.Value>
                                         <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
@@ -177,17 +229,14 @@
     </UserControl.Resources>
 
     <Grid Margin="15">
-        <!-- Aumentamos el margen de 10 a 15 para más espacio -->
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3*"/>
-            <!-- Aumentamos la proporción a 3* -->
             <ColumnDefinition Width="5"/>
             <ColumnDefinition Width="1.5*"/>
         </Grid.ColumnDefinitions>
 
         <!-- COLUMNA IZQUIERDA: TABLA DE OPERACIONES -->
         <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="15">
-            <!-- CornerRadius y Padding aumentados -->
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Operaciones Registradas" 
                            FontSize="22" FontWeight="ExtraBold" Foreground="#FF007BFF" Margin="0,0,0,15"/>
@@ -201,7 +250,7 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Folio" Binding="{Binding FolioEscritura}" Width="100"/>
                         <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNombre}" Width="*"/>
-                        <DataGridTextColumn Header="Tipo Operación" Binding="{Binding TipoOperacion}" Width="150"/>
+                        <DataGridTextColumn Header="Tipo Operación" Binding="{Binding TipoOperacion}" Width="160"/>
                         <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat='C'}" Width="120"/>
                         <DataGridTextColumn Header="Fecha" Binding="{Binding FechaOperacion, StringFormat='dd/MM/yyyy'}" Width="100"/>
                     </DataGrid.Columns>
@@ -209,75 +258,154 @@
             </DockPanel>
         </Border>
 
-        <GridSplitter Grid.Column="0" Width="5" HorizontalAlignment="Right" Background="Transparent"/>
+        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="Transparent"/>
 
         <!-- COLUMNA DERECHA: FORMULARIO DE REGISTRO -->
         <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="25">
-            <!-- CornerRadius y Padding aumentados -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="FormularioOperacion">
                     <TextBlock Text="Registrar Operación" 
                                FontSize="22" FontWeight="ExtraBold" 
                                Foreground="#FF007BFF" Margin="0,0,0,30"/>
-                    <!-- FontSize y Margin aumentados -->
 
-                    <TextBlock Text="Cliente:" FontWeight="Medium" Margin="0,0,0,5"/>
+                    <!-- BÚSQUEDA RÁPIDA DE CLIENTE CON AUTOCOMPLETADO -->
+                    <TextBlock Text="Buscar Cliente (Nombre o RFC):" FontWeight="Medium" Margin="0,0,0,5"/>
+                    <Grid Margin="0,5,0,5">
+                        <TextBox x:Name="txtBuscarCliente"
+                                 Style="{StaticResource ModernInputStyle}"
+                                 Margin="0"
+                                 Height="38"
+                                 TextChanged="txtBuscarCliente_TextChanged"
+                                 PreviewKeyDown="txtBuscarCliente_PreviewKeyDown"/>
 
-                    <!-- COMBOBOX CON BÚSQUEDA AVANZADA (Aplicamos estilo) -->
-                    <ComboBox x:Name="cmbCliente" 
-                              Style="{StaticResource ModernComboBoxStyle}"
-                              DisplayMemberPath="Nombre" 
-                              SelectedValuePath="Id"
-                              IsEditable="True" 
-                              IsTextSearchEnabled="False"
-                              StaysOpenOnEdit="True"
-                              TextSearch.TextPath="Nombre"
-                              KeyUp="cmbCliente_KeyUp"/>
+                        <!-- Texto de sugerencia cuando está vacío -->
+                        <TextBlock Text="Escriba para buscar por Nombre o RFC..."
+                                   Foreground="#999999"
+                                   FontStyle="Italic"
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,0,0"
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Text, ElementName=txtBuscarCliente}" Value="">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
 
+                        <!-- Menú flotante de resultados filtrados -->
+                        <Popup x:Name="popupClientes" 
+                               PlacementTarget="{Binding ElementName=txtBuscarCliente}" 
+                               Placement="Bottom" 
+                               IsOpen="False" 
+                               StaysOpen="False" 
+                               AllowsTransparency="True"
+                               PopupAnimation="Slide">
+                            <Border Background="White" 
+                                    BorderBrush="#CCCCCC" 
+                                    BorderThickness="1" 
+                                    CornerRadius="5" 
+                                    MaxHeight="220" 
+                                    MinWidth="{Binding ActualWidth, ElementName=txtBuscarCliente}">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#888888" Direction="270" ShadowDepth="3" BlurRadius="6" Opacity="0.25"/>
+                                </Border.Effect>
+                                <ListBox x:Name="lstClientesSugeridos" 
+                                         BorderThickness="0"
+                                         SelectionChanged="lstClientesSugeridos_SelectionChanged"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="5,4">
+                                                <TextBlock Text="{Binding Nombre}" FontWeight="SemiBold" FontSize="13" Foreground="#333333"/>
+                                                <TextBlock Text="{Binding RFC, StringFormat='RFC: {0}'}" FontSize="11" Foreground="#007BFF"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </Popup>
+                    </Grid>
+
+                    <!-- Estado/Confirmación de selección -->
+                    <TextBlock x:Name="lblClienteSeleccionado" 
+                               Text="Ningún cliente seleccionado" 
+                               FontSize="11" 
+                               FontStyle="Italic" 
+                               Foreground="#666666" 
+                               Margin="0,0,0,10"/>
+
+                    <!-- TIPO DE OPERACIÓN NOTARIAL -->
+                    <TextBlock Text="Tipo de Operación:" FontWeight="Medium" Margin="0,0,0,5"/>
                     <ComboBox x:Name="cmbTipoOperacion" 
-                              Style="{StaticResource ModernComboBoxStyle}">
-                        <ComboBoxItem Content="Transmisión o constitución de derechos reales sobre inmuebles. 8000 UMA;"/>
-                        <ComboBoxItem Content="Otorgamiento de poderes para actos de administracion o dominio irrevocables."/>
-                        <ComboBoxItem Content="Modificación patrimonial derivada de aumento o disminución de capital social."/>
-                        <ComboBoxItem Content="Fusión o escisión de sociedades."/>
-                        <ComboBoxItem Content="Compraventa de acciones y partes sociales."/>
-                        <ComboBoxItem Content="Constitución o modificación de fideicomisos. 4000 UMA."/>
-                        <ComboBoxItem Content="Otra Actividad Vulnerable"/>
+                              Tag="Seleccione el tipo de operación..."
+                              Style="{StaticResource ModernOperacionesComboBoxStyle}"
+                              SelectedIndex="-1"
+                              Margin="0,5,0,10">
+                        <ComboBoxItem>
+                            <TextBlock Text="Derechos Reales sobre Inmuebles (8,000 UMA)" TextWrapping="Wrap"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <TextBlock Text="Poderes Irrevocables de Administración o Dominio" TextWrapping="Wrap"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <TextBlock Text="Aumento o Disminución de Capital Social" TextWrapping="Wrap"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <TextBlock Text="Fusión o Escisión de Sociedades" TextWrapping="Wrap"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <TextBlock Text="Compraventa de Acciones y Partes Sociales" TextWrapping="Wrap"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <TextBlock Text="Constitución o Modificación de Fideicomisos (4,000 UMA)" TextWrapping="Wrap"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <TextBlock Text="Otra Actividad Vulnerable Notarial" TextWrapping="Wrap"/>
+                        </ComboBoxItem>
                     </ComboBox>
 
+                    <!-- MONTO -->
                     <TextBlock Text="Monto de la Operación:" FontWeight="Medium" Margin="0,0,0,5"/>
                     <TextBox x:Name="txtMonto" 
                              Style="{StaticResource ModernInputStyle}"
                              PreviewTextInput="txtMonto_PreviewTextInput"/>
 
+                    <!-- FECHA DE OPERACIÓN -->
                     <TextBlock Text="Fecha de Operación:" FontWeight="Medium" Margin="0,0,0,5"/>
-                    <!-- Aunque DatePicker no usa Style en este caso, se beneficia de los márgenes -->
                     <DatePicker x:Name="dpFechaOperacion" 
                                 Margin="0,5,0,10" Padding="5"/>
 
+                    <!-- NO. ESCRITURA -->
                     <TextBlock Text="No. Escritura:" FontWeight="Medium" Margin="0,0,0,5"/>
                     <TextBox x:Name="txtFolioEscritura" 
                              Style="{StaticResource ModernInputStyle}"/>
 
+                    <!-- DESCRIPCIÓN -->
                     <TextBlock Text="Descripción (Opcional):" FontWeight="Medium" Margin="0,0,0,5"/>
                     <TextBox x:Name="txtDescripcion" Height="60" TextWrapping="Wrap" 
                              AcceptsReturn="True" 
                              Style="{StaticResource ModernInputStyle}"/>
-                    <!-- Aplicamos estilo para bordes redondeados -->
 
+                    <!-- BOTONES DE ACCIÓN -->
                     <Grid Margin="0,10,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Botón Nuevo (Aplicamos estilo) -->
+                        <!-- Botón Nuevo -->
                         <Button x:Name="btnNuevo" Content="Nuevo" 
+                                Grid.Column="0"
                                 Style="{StaticResource ModernActionButtonStyle}"
                                 Background="#FF007BFF" Foreground="White"
                                 Click="btnNuevo_Click"/>
 
-                        <!-- Botón Guardar (Aplicamos estilo) -->
+                        <!-- Botón Guardar -->
                         <Button x:Name="btnGuardar" Content="Guardar" 
                                 Grid.Column="1" 
                                 Style="{StaticResource ModernActionButtonStyle}"
