@@ -112,6 +112,7 @@
       <DependentUpon>ClienteView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Conexion\ClsConfiguracion.cs" />
+    <Compile Include="Conexion\ClsReporteFicha.cs" />
     <Compile Include="ImportarClientesWindow.xaml.cs">
       <DependentUpon>ImportarClientesWindow.xaml</DependentUpon>
     </Compile>
