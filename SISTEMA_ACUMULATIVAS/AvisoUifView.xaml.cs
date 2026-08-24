@@ -206,136 +206,162 @@ namespace SISTEMA_ACUMULATIVAS.Views
             foreach (var op in item.OperacionesDetalle)
             {
                 filasTabla += $@"
-                <tr>
-                    <td>{op.FechaOperacion:dd/MM/yyyy}</td>
-                    <td><strong>{op.FolioEscritura}</strong></td>
-                    <td>{op.TipoOperacion}</td>
-                    <td style='text-align: right; font-weight: bold;'>{op.Monto:C}</td>
-                </tr>";
+        <tr>
+            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'>{op.FechaOperacion:dd/MM/yyyy}</td>
+            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'><strong>{op.FolioEscritura}</strong></td>
+            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'>{op.TipoOperacion}</td>
+            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0; text-align: right; font-weight: bold;'>{op.Monto:C}</td>
+        </tr>";
             }
 
             return $@"
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset='UTF-8'>
-        <style>
-            @page {{
-                size: letter portrait;
-                margin: 15mm 15mm 15mm 15mm;
-            }}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <style>
+        @page {{
+            size: letter portrait;
+            margin: 12mm;
+        }}
 
-            @media print {{
-                body {{
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }}
+        @media print {{
+            body {{
+                background-color: #FFFFFF !important;
+                padding: 0 !important;
             }}
+            .page-container {{
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+            }}
+        }}
 
-            body {{ 
-                background-color: #ffffff; 
-                color: #1E293B; 
-                font-family: 'Segoe UI', Arial, sans-serif; 
-                padding: 20px; 
-                font-size: 13px; 
-                line-height: 1.5; 
-            }}
-            .header {{ 
-                text-align: center; 
-                border-bottom: 2px solid #0284C7; 
-                padding-bottom: 12px; 
-                margin-bottom: 18px; 
-            }}
-            .header h1 {{ 
-                margin: 0; 
-                font-size: 18px; 
-                color: #0F172A; 
-                text-transform: uppercase; 
-                letter-spacing: 0.5px;
-            }}
-            .header h2 {{ 
-                margin: 4px 0 0 0; 
-                font-size: 13px; 
-                color: #0284C7; 
-                font-weight: 600; 
-            }}
-            .header p {{ 
-                margin: 2px 0 0 0; 
-                font-size: 11px; 
-                color: #64748B; 
-            }}
-            .legal-box {{ 
-                background-color: #F8FAFC; 
-                border-left: 4px solid #0284C7; 
-                padding: 10px 14px; 
-                margin-bottom: 18px; 
-                font-size: 11.5px; 
-                color: #334155; 
-                text-align: justify;
-            }}
-            .info-table {{ 
-                width: 100%; 
-                border-collapse: collapse; 
-                margin-bottom: 20px; 
-            }}
-            .info-table td {{ 
-                padding: 6px 10px; 
-                border-bottom: 1px solid #E2E8F0; 
-                font-size: 12.5px; 
-            }}
-            .info-table .label {{ 
-                font-weight: bold; 
-                width: 32%; 
-                color: #475569; 
-                background-color: #F8FAFC; 
-            }}
-            .table-grid {{ 
-                width: 100%; 
-                border-collapse: collapse; 
-                margin-top: 8px; 
-                margin-bottom: 20px; 
-            }}
-            .table-grid th {{ 
-                background-color: #1E293B; 
-                color: white; 
-                padding: 8px 10px; 
-                font-size: 12px; 
-                text-align: left; 
-            }}
-            .table-grid td {{ 
-                padding: 8px 10px; 
-                border-bottom: 1px solid #CBD5E1; 
-                font-size: 12px; 
-            }}
-            .alert-box {{ 
-                background-color: #FEF2F2; 
-                border-left: 4px solid #DC2626; 
-                padding: 10px 14px; 
-                margin-bottom: 25px; 
-                font-size: 11.5px; 
-                color: #7F1D1D; 
-                text-align: justify;
-            }}
-            .footer {{ 
-                margin-top: 35px; 
-                text-align: center; 
-                font-size: 12px; 
-            }}
-            .signature-line {{ 
-                width: 260px; 
-                border-top: 1px solid #64748B; 
-                margin: 45px auto 8px auto; 
-            }}
-            .system-foot {{ 
-                margin-top: 20px; 
-                font-size: 10px; 
-                color: #94A3B8; 
-                border-top: 1px solid #E2E8F0; 
-                padding-top: 6px; 
-            }}
-        </style>
-    </head>
-    <body>
+        /* Fondo general estilo visor de documentos */
+        body {{ 
+            background-color: #525659; 
+            color: #1E293B; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 0;
+            padding: 20px 10px; 
+            display: flex;
+            justify-content: center;
+        }}
+
+        /* Hoja de papel Carta fija y centrada */
+        .page-container {{
+            background-color: #FFFFFF;
+            width: 780px;
+            min-height: 980px;
+            padding: 40px 45px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+            box-sizing: border-box;
+            border-radius: 2px;
+        }}
+
+        .header {{ 
+            text-align: center; 
+            border-bottom: 2px solid #0284C7; 
+            padding-bottom: 10px; 
+            margin-bottom: 16px; 
+        }}
+        .header h1 {{ 
+            margin: 0; 
+            font-size: 17px; 
+            color: #0F172A; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+        }}
+        .header h2 {{ 
+            margin: 3px 0 0 0; 
+            font-size: 13px; 
+            color: #0284C7; 
+            font-weight: 600; 
+        }}
+        .header p {{ 
+            margin: 2px 0 0 0; 
+            font-size: 11px; 
+            color: #64748B; 
+        }}
+
+        .legal-box {{ 
+            background-color: #F8FAFC; 
+            border-left: 4px solid #0284C7; 
+            padding: 8px 12px; 
+            margin-bottom: 16px; 
+            font-size: 11px; 
+            color: #334155; 
+            line-height: 1.4;
+            text-align: justify;
+        }}
+
+        .info-table {{ 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 16px; 
+        }}
+        .info-table td {{ 
+            padding: 5px 8px; 
+            border-bottom: 1px solid #E2E8F0; 
+            font-size: 12px; 
+        }}
+        .info-table .label {{ 
+            font-weight: bold; 
+            width: 32%; 
+            color: #475569; 
+            background-color: #F8FAFC; 
+        }}
+
+        .table-grid {{ 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 6px; 
+            margin-bottom: 16px; 
+        }}
+        .table-grid th {{ 
+            background-color: #1E293B; 
+            color: white; 
+            padding: 7px 10px; 
+            font-size: 11.5px; 
+            text-align: left; 
+        }}
+
+        .alert-box {{ 
+            background-color: #FEF2F2; 
+            border-left: 4px solid #DC2626; 
+            padding: 8px 12px; 
+            margin-bottom: 20px; 
+            font-size: 11px; 
+            color: #7F1D1D; 
+            line-height: 1.4;
+            text-align: justify;
+        }}
+
+        .footer {{ 
+            margin-top: 30px; 
+            text-align: center; 
+            font-size: 11.5px; 
+        }}
+        .signature-line {{ 
+            width: 240px; 
+            border-top: 1px solid #64748B; 
+            margin: 35px auto 6px auto; 
+        }}
+        .system-foot {{ 
+            margin-top: 18px; 
+            font-size: 9.5px; 
+            color: #94A3B8; 
+            border-top: 1px solid #E2E8F0; 
+            padding-top: 5px; 
+        }}
+    </style>
+</head>
+<body>
+
+    <div class='page-container'>
+
         <div class='header'>
             <h1>Notaría Pública No. 215</h1>
             <h2>Ficha Informativa de Operación Vulnerable y Acumulación</h2>
@@ -358,7 +384,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             </tr>
             <tr>
                 <td class='label'>Monto Total Acumulado (6 Meses):</td>
-                <td><strong style='color: #0284C7; font-size: 14px;'>{item.MontoTotalAcumulado:C}</strong></td>
+                <td><strong style='color: #0284C7; font-size: 13.5px;'>{item.MontoTotalAcumulado:C}</strong></td>
             </tr>
             <tr>
                 <td class='label'>Motivo / Criterio del Aviso:</td>
@@ -366,7 +392,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             </tr>
         </table>
 
-        <h3 style='font-size: 13px; color: #1E293B; margin-bottom: 6px;'>Desglose de Operaciones en el Periodo</h3>
+        <div style='font-size: 12px; font-weight: bold; color: #1E293B; margin-bottom: 4px;'>Desglose de Operaciones en el Periodo</div>
         <table class='table-grid'>
             <thead>
                 <tr>
@@ -395,15 +421,44 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 2026 SISTEMA DE ACUMULATIVAS | Control de Umbrales y Acumulaciones Notariales
             </div>
         </div>
-    </body>
-    </html>";
+
+    </div>
+
+</body>
+</html>";
         }
 
         private async void btnImprimir_Click(object sender, RoutedEventArgs e)
         {
             if (webView != null && webView.CoreWebView2 != null)
             {
-                await webView.CoreWebView2.ExecuteScriptAsync("window.print();");
+                try
+                {
+                    // 1. Ruta temporal para el archivo PDF (igual que en CertiScan)
+                    string rutaTemp = System.IO.Path.Combine(
+                        System.IO.Path.GetTempPath(),
+                        $"Ficha_Vulnerable_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+                    );
+
+                    // 2. Configurar la exportación PDF nativa de WebView2 sin cabeceras web
+                    var printSettings = webView.CoreWebView2.Environment.CreatePrintSettings();
+                    printSettings.ShouldPrintHeaderAndFooter = false; // QUITA COMPLETAMENTE 'about:blank' Y FECHAS
+                    printSettings.ShouldPrintBackgrounds = true;      // Mantiene colores y membretes
+
+                    // 3. Generar el archivo PDF limpio
+                    await webView.CoreWebView2.PrintToPdfAsync(rutaTemp, printSettings);
+
+                    // 4. Abrir el PDF generado de inmediato
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = rutaTemp,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al exportar/imprimir la ficha: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
     }
