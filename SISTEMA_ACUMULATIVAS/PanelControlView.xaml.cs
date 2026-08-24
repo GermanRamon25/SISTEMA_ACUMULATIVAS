@@ -24,9 +24,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             CargarUMA();
+            CargarCatalogoOperaciones();
             CargarPapelera();
             CargarLogs();
-            CargarUsuarios(); // <--- Added so the list loads on startup
         }
 
         // --- 1. UMA CONFIGURATION ---
@@ -53,7 +53,82 @@ namespace SISTEMA_ACUMULATIVAS.Views
             else MessageBox.Show("Ingrese un número válido.");
         }
 
-        // --- 2. RECYCLE BIN ---
+        // --- 2. CATÁLOGO DE OPERACIONES (NUEVO) ---
+        public class CatalogoOperacionItem
+        {
+            public int Id { get; set; }
+            public string Nombre { get; set; }
+            public bool EsAvisoObligatorio { get; set; }
+            public bool Activo { get; set; }
+
+            public string TextoObligatorio => EsAvisoObligatorio ? "SÍ (Obligatorio)" : "No (Sujeto a Umbral)";
+            public string ColorObligatorio => EsAvisoObligatorio ? "#DC2626" : "#64748B";
+        }
+
+        private void CargarCatalogoOperaciones()
+        {
+            List<CatalogoOperacionItem> lista = new List<CatalogoOperacionItem>();
+            try
+            {
+                using (SqlConnection conn = _conexion.GetConnection())
+                {
+                    string query = "SELECT Id, Nombre, EsAvisoObligatorio, Activo FROM Cat_TiposOperacion ORDER BY Id DESC";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            lista.Add(new CatalogoOperacionItem
+                            {
+                                Id = (int)reader["Id"],
+                                Nombre = reader["Nombre"].ToString(),
+                                EsAvisoObligatorio = (bool)reader["EsAvisoObligatorio"],
+                                Activo = (bool)reader["Activo"]
+                            });
+                        }
+                    }
+                }
+                dgCatalogoOperaciones.ItemsSource = lista;
+            }
+            catch { }
+        }
+
+        private void btnGuardarOperacion_Click(object sender, RoutedEventArgs e)
+        {
+            string nombreOp = txtNuevaOperacion.Text.Trim();
+            bool esObligatorio = chkAvisoObligatorio.IsChecked ?? false;
+
+            if (string.IsNullOrWhiteSpace(nombreOp))
+            {
+                MessageBox.Show("Debe escribir un nombre para la operación.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                using (SqlConnection conn = _conexion.GetConnection())
+                {
+                    string query = "INSERT INTO Cat_TiposOperacion (Nombre, EsAvisoObligatorio) VALUES (@Nombre, @Obligatorio)";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Nombre", nombreOp);
+                        cmd.Parameters.AddWithValue("@Obligatorio", esObligatorio);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                MessageBox.Show("Operación agregada al catálogo exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                txtNuevaOperacion.Clear();
+                chkAvisoObligatorio.IsChecked = false;
+                CargarCatalogoOperaciones();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al guardar (Verifique que el nombre no esté duplicado): " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // --- 3. RECYCLE BIN ---
         private void CargarPapelera()
         {
             List<Cliente> eliminados = new List<Cliente>();
@@ -61,7 +136,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    // Search for INACTIVE clients (Activo = 0)
                     string query = "SELECT Id, Nombre, RFC FROM Clientes WHERE Activo = 0";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -83,7 +157,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
             catch { }
         }
-        //  C#
+
         private void btnRefrescarPapelera_Click(object sender, RoutedEventArgs e) { CargarPapelera(); }
 
         private void btnRestaurar_Click(object sender, RoutedEventArgs e)
@@ -112,7 +186,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             else MessageBox.Show("Seleccione un cliente de la lista.");
         }
 
-        // --- 3. SECURITY LOGS (AUDIT) ---
+        // --- 4. SECURITY LOGS (AUDIT) ---
         public class LogItem
         {
             public DateTime Fecha { get; set; }
@@ -128,7 +202,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    // Join with the Users table to see the real name
                     string query = @"SELECT TOP 100 L.Fecha, U.Usuario, L.Accion, L.Detalle 
                                      FROM LogsSistema L
                                      LEFT JOIN Usuarios U ON L.UsuarioId = U.Id
@@ -154,100 +227,5 @@ namespace SISTEMA_ACUMULATIVAS.Views
         }
 
         private void btnActualizarLogs_Click(object sender, RoutedEventArgs e) { CargarLogs(); }
-
-        // --- 4. USER MANAGEMENT (NEW) ---
-
-        // Helper class for the DataGrid
-        public class UsuarioItem
-        {
-            public int Id { get; set; }
-            public string Usuario { get; set; }
-            public string NombreCompleto { get; set; }
-            public string Rol { get; set; }
-            public bool Activo { get; set; }
-        }
-
-        private void CargarUsuarios()
-        {
-            List<UsuarioItem> lista = new List<UsuarioItem>();
-            try
-            {
-                using (SqlConnection conn = _conexion.GetConnection())
-                {
-                    string query = "SELECT Id, Usuario, NombreCompleto, Rol, Activo FROM Usuarios";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            lista.Add(new UsuarioItem
-                            {
-                                Id = (int)reader["Id"],
-                                Usuario = reader["Usuario"].ToString(),
-                                NombreCompleto = reader["NombreCompleto"].ToString(),
-                                Rol = reader["Rol"].ToString(),
-                                Activo = (bool)reader["Activo"]
-                            });
-                        }
-                    }
-                }
-                dgUsuarios.ItemsSource = lista;
-            }
-            catch { }
-        }
-
-        private void btnRefrescarUsuarios_Click(object sender, RoutedEventArgs e) { CargarUsuarios(); }
-
-        // Generic method to change Role or Status
-        private void ActualizarUsuario(string columna, object valor, string mensajeExito)
-        {
-            if (dgUsuarios.SelectedItem is UsuarioItem user)
-            {
-                // Prevent removing Admin role from yourself by mistake
-                if (user.Id == ClsSesion.UsuarioId && columna == "Rol" && valor.ToString() != "Admin")
-                {
-                    MessageBox.Show("No puedes quitarte el rol de Admin a ti mismo.", "Seguridad", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                try
-                {
-                    using (SqlConnection conn = _conexion.GetConnection())
-                    {
-                        string query = $"UPDATE Usuarios SET {columna} = @Valor WHERE Id = @Id";
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@Valor", valor);
-                            cmd.Parameters.AddWithValue("@Id", user.Id);
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-                    CargarUsuarios(); // Reload list
-                    MessageBox.Show(mensajeExito, "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
-            }
-            else MessageBox.Show("Seleccione un usuario.");
-        }
-
-        private void btnHacerAdmin_Click(object sender, RoutedEventArgs e)
-        {
-            ActualizarUsuario("Rol", "Admin", "Usuario promovido a ADMINISTRADOR.");
-        }
-
-        private void btnHacerOperador_Click(object sender, RoutedEventArgs e)
-        {
-            ActualizarUsuario("Rol", "Operador", "Usuario degradado a OPERADOR.");
-        }
-
-        private void btnBloquear_Click(object sender, RoutedEventArgs e)
-        {
-            if (dgUsuarios.SelectedItem is UsuarioItem user)
-            {
-                bool nuevoEstado = !user.Activo; // Invert state
-                string texto = nuevoEstado ? "DESBLOQUEADO" : "BLOQUEADO";
-                ActualizarUsuario("Activo", nuevoEstado, $"El usuario ha sido {texto}.");
-            }
-        }
     }
 }

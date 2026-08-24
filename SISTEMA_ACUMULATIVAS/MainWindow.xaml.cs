@@ -31,18 +31,9 @@ namespace SISTEMA_ACUMULATIVAS
             {
                 lblUsuarioActual.Text = ClsSesion.NombreUsuario;
 
-                //  NUEVO: VALIDACIÓN DE SEGURIDAD PARA EL PANEL ---
-                // Si el usuario es "Admin", mostramos la pestaña de configuración.
-                // Si es "Operador", la ocultamos (Collapsed).
-                if (ClsSesion.Rol == "Admin")
-                {
-                    tabPanelControl.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    tabPanelControl.Visibility = Visibility.Collapsed;
-                }
-               
+                // --- CAMBIO: Se removió la validación de rol (Admin vs Operador).
+                // Ahora el panel de control siempre se muestra para cualquier usuario.
+                tabPanelControl.Visibility = Visibility.Visible;
             }
             else
             {
@@ -69,7 +60,6 @@ namespace SISTEMA_ACUMULATIVAS
             // 4. Abrir la ventana de Login EN MODO DIÁLOGO
             LoginWindow login = new LoginWindow();
 
-            // --- CORRECCIÓN CLAVE ---
             // Usamos ShowDialog() en lugar de Show(). 
             // Esto permite que 'DialogResult = true' funcione en LoginWindow.xaml.cs
             bool? resultado = login.ShowDialog();
@@ -90,7 +80,7 @@ namespace SISTEMA_ACUMULATIVAS
             }
             else
             {
-                // 6. Si cerró la ventana de Login sin entrar (canceló), apagamos la app por completo
+                // Si cerró la ventana de Login sin entrar (canceló), apagamos la app por completo
                 Application.Current.Shutdown();
             }
         }

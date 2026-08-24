@@ -8,12 +8,27 @@
              Background="White" Loaded="UserControl_Loaded">
 
     <Grid Margin="20">
-        <TextBlock Text="PANEL DE CONTROL ADMINISTRATIVO" FontSize="24" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,20"/>
+        <TextBlock Text="AJUSTES DEL SISTEMA Y RESPONSABILIDAD LEGAL" FontSize="24" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,20"/>
 
         <TabControl Margin="0,40,0,0">
 
             <TabItem Header="Configuración General">
                 <StackPanel Margin="20">
+
+                    <!-- MENSAJE DE RESPONSABILIDAD LEGAL -->
+                    <Border Background="#FFF3CD" BorderBrush="#FFC107" BorderThickness="1" CornerRadius="6" Padding="15" Margin="0,0,0,25">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚠️" FontSize="32" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                            <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Foreground="#856404" FontSize="13">
+                                <Run FontWeight="Bold" Text="AVISO DE RESPONSABILIDAD LEGAL (LFPIORPI):"/>
+                                <LineBreak/>
+                                <Run Text="La alteración del valor de la Unidad de Medida y Actualización (UMA) impacta de manera directa e inmediata en el cálculo de los umbrales para la prevención de lavado de dinero."/>
+                                <LineBreak/>
+                                <Run Text="El Notario Público titular y el operador en turno asumen la estricta responsabilidad de verificar que el monto ingresado coincida exactamente con el publicado de manera oficial por el INEGI."/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
                     <TextBlock Text="Valor de la UMA (Actualizable)" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="$" FontSize="18" VerticalAlignment="Center"/>
@@ -22,9 +37,63 @@
                                 Background="#FF007BFF" Foreground="White" Padding="15,5" 
                                 BorderThickness="0" Cursor="Hand" Click="btnGuardarUMA_Click"/>
                     </StackPanel>
-                    <TextBlock Text="Nota: Este cambio afecta inmediatamente a los cálculos de umbrales." 
+                    <TextBlock Text="Nota: Este cambio afecta inmediatamente a todos los registros y avisos de la notaría." 
                                Foreground="Gray" FontStyle="Italic" Margin="0,10,0,0"/>
                 </StackPanel>
+            </TabItem>
+
+            <!-- NUEVA PESTAÑA: CATÁLOGO DE OPERACIONES -->
+            <TabItem Header="Catálogo de Operaciones (LFPIORPI)">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Formulario para agregar una nueva operación -->
+                    <Border Grid.Row="0" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="15" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                                <TextBlock Text="Nombre del Nuevo Tipo de Operación:" FontWeight="Bold" FontSize="12" Margin="0,0,0,5"/>
+                                <TextBox x:Name="txtNuevaOperacion" Padding="8" FontSize="13"/>
+                            </StackPanel>
+
+                            <CheckBox x:Name="chkAvisoObligatorio" Grid.Column="1" 
+                                      Content="Aviso UIF Obligatorio (Sin importar umbral)" 
+                                      VerticalAlignment="Bottom" Margin="0,0,15,10" FontWeight="SemiBold" Foreground="#DC2626"/>
+
+                            <Button x:Name="btnGuardarOperacion" Grid.Column="2" Content="➕ Guardar Operación" 
+                                    Background="#0F172A" Foreground="White" FontWeight="Bold" Padding="15,8" 
+                                    VerticalAlignment="Bottom" BorderThickness="0" Cursor="Hand" Click="btnGuardarOperacion_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Tabla del Catálogo -->
+                    <DataGrid Grid.Row="1" x:Name="dgCatalogoOperaciones" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="40"/>
+                            <DataGridTextColumn Header="Tipo de Operación" Binding="{Binding Nombre}" Width="*"/>
+
+                            <DataGridTemplateColumn Header="¿Aviso Obligatorio?" Width="160">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding TextoObligatorio}" 
+                                                   Foreground="{Binding ColorObligatorio}" 
+                                                   FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="60"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </TabItem>
 
             <TabItem Header="Papelera de Reciclaje (Clientes)">
@@ -66,55 +135,6 @@
                             <DataGridTextColumn Header="Usuario" Binding="{Binding Usuario}" Width="100"/>
                             <DataGridTextColumn Header="Acción" Binding="{Binding Accion}" Width="150"/>
                             <DataGridTextColumn Header="Detalle" Binding="{Binding Detalle}" Width="*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
-
-            <TabItem Header="Gestión de Usuarios">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <Button Content="🔄 Actualizar Lista" Click="btnRefrescarUsuarios_Click" 
-                                Background="#FF007BFF" Foreground="White" Padding="10,5" Margin="0,0,20,0" BorderThickness="0"/>
-
-                        <TextBlock Text="Acciones:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
-
-                        <Button x:Name="btnHacerAdmin" Content="👮 Volver Admin" 
-                                Background="#17A2B8" Foreground="White" Padding="10,5" Margin="0,0,5,0"
-                                BorderThickness="0" Click="btnHacerAdmin_Click"/>
-
-                        <Button x:Name="btnHacerOperador" Content="👤 Volver Operador" 
-                                Background="#FF6C757D" Foreground="White" Padding="10,5" Margin="0,0,5,0"
-                                BorderThickness="0" Click="btnHacerOperador_Click"/>
-
-                        <Button x:Name="btnBloquear" Content="🚫 Bloquear/Desbloquear" 
-                                Background="#FFDC3545" Foreground="White" Padding="10,5"
-                                BorderThickness="0" Click="btnBloquear_Click"/>
-                    </StackPanel>
-
-                    <DataGrid Grid.Row="1" x:Name="dgUsuarios" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
-                            <DataGridTextColumn Header="Usuario" Binding="{Binding Usuario}" Width="120"/>
-                            <DataGridTextColumn Header="Nombre Completo" Binding="{Binding NombreCompleto}" Width="*"/>
-                            <DataGridTextColumn Header="Rol Actual" Binding="{Binding Rol}" Width="120">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Rol}" Value="Admin">
-                                                <Setter Property="Foreground" Value="#FF007BFF"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="60"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

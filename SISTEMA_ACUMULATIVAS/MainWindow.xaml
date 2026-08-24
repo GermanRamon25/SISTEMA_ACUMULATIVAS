@@ -113,7 +113,8 @@
                 <views:AvisoUifView />
             </TabItem>
 
-            <TabItem x:Name="tabPanelControl" Header="⚙️ PANEL ADMIN" Visibility="Collapsed">
+            <!-- CAMBIO: Se eliminó Visibility="Collapsed" para que siempre esté visible -->
+            <TabItem x:Name="tabPanelControl" Header="⚙️ Ajustes">
                 <views:PanelControlView />
             </TabItem>
 

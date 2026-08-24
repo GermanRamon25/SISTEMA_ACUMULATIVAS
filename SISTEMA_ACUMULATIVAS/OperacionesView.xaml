@@ -346,14 +346,13 @@
                               Style="{StaticResource ModernOperacionesComboBoxStyle}"
                               SelectedIndex="-1"
                               Margin="0,5,0,10"
+                              SelectedValuePath="Id"
                               SelectionChanged="cmbTipoOperacion_SelectionChanged">
-                        <ComboBoxItem Content="Derechos Reales sobre Inmuebles (8,000 UMA)"/>
-                        <ComboBoxItem Content="Poderes Irrevocables de Administración o Dominio"/>
-                        <ComboBoxItem Content="Aumento o Disminución de Capital Social"/>
-                        <ComboBoxItem Content="Fusión o Escisión de Sociedades"/>
-                        <ComboBoxItem Content="Compraventa de Acciones y Partes Sociales"/>
-                        <ComboBoxItem Content="Constitución o Modificación de Fideicomisos (4,000 UMA)"/>
-                        <ComboBoxItem Content="Otra Actividad Vulnerable Notarial"/>
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Nombre}" TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
                     </ComboBox>
 
                     <!-- MONTO -->

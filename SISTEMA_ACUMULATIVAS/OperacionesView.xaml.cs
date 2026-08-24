@@ -25,6 +25,14 @@ namespace SISTEMA_ACUMULATIVAS.Views
         private List<ClienteItem> _todosLosClientes;
         private int? _clienteSeleccionadoId = null;
 
+        // Modelo para el catálogo de operaciones dinámico
+        public class TipoOperacionItem
+        {
+            public int Id { get; set; }
+            public string Nombre { get; set; }
+            public bool EsAvisoObligatorio { get; set; }
+        }
+
         public class ClienteItem
         {
             public int Id { get; set; }
@@ -41,9 +49,43 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            CargarTiposOperacion(); // Carga las operaciones desde la base de datos
             CargarClientesParaBusqueda();
             CargarOperacionesGrid();
             LimpiarFormulario();
+        }
+
+        // --- CARGAR TIPOS DE OPERACIÓN DESDE LA BASE DE DATOS ---
+        private void CargarTiposOperacion()
+        {
+            try
+            {
+                List<TipoOperacionItem> lista = new List<TipoOperacionItem>();
+                using (SqlConnection conn = _conexion.GetConnection())
+                {
+                    string query = "SELECT Id, Nombre, EsAvisoObligatorio FROM Cat_TiposOperacion WHERE Activo = 1 ORDER BY Nombre";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                lista.Add(new TipoOperacionItem
+                                {
+                                    Id = Convert.ToInt32(reader["Id"]),
+                                    Nombre = reader["Nombre"].ToString(),
+                                    EsAvisoObligatorio = (bool)reader["EsAvisoObligatorio"]
+                                });
+                            }
+                        }
+                    }
+                }
+                cmbTipoOperacion.ItemsSource = lista;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar el catálogo de operaciones: " + ex.Message, "Error BD", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // --- 1. CARGA DE DATOS ---
@@ -138,23 +180,17 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- NUEVO: ALERTA DE ACTIVIDAD VULNERABLE AL SELECCIONAR ---
+        // --- ALERTA DE ACTIVIDAD VULNERABLE AL SELECCIONAR ---
         private void cmbTipoOperacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Si la selección viene de cargar datos del Grid o de limpiar el formulario, no mostramos la alerta
             if (_seleccionAutomatica) return;
 
-            if (cmbTipoOperacion.SelectedItem is ComboBoxItem cbItem)
+            if (cmbTipoOperacion.SelectedItem is TipoOperacionItem itemSeleccionado)
             {
-                string tipoOperacion = cbItem.Content is TextBlock tb ? tb.Text : cbItem.Content?.ToString();
-
-                if (!string.IsNullOrEmpty(tipoOperacion))
-                {
-                    MessageBox.Show($"¡ATENCIÓN!\n\nHa seleccionado:\n{tipoOperacion}\n\nEsta operación es catalogada como ACTIVIDAD VULNERABLE. Por favor, asegúrese de recabar la documentación de identificación requerida, aun si no se alcanza el umbral de UMAS para el aviso correspondiente.",
-                        "Alerta Ley Antilavado",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                }
+                MessageBox.Show($"¡ATENCIÓN!\n\nHa seleccionado:\n{itemSeleccionado.Nombre}\n\nEsta operación es catalogada como ACTIVIDAD VULNERABLE. Por favor, asegúrese de recabar la documentación de identificación requerida, aun si no se alcanza el umbral de UMAS para el aviso correspondiente.",
+                    "Alerta Ley Antilavado",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
             }
         }
 
@@ -239,16 +275,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
             int clienteId = _clienteSeleccionadoId.Value;
 
             string tipoOperacion = "";
-            if (cmbTipoOperacion.SelectedItem is ComboBoxItem cbItem)
+            if (cmbTipoOperacion.SelectedItem is TipoOperacionItem itemSeleccionado)
             {
-                if (cbItem.Content is TextBlock tb)
-                {
-                    tipoOperacion = tb.Text;
-                }
-                else
-                {
-                    tipoOperacion = cbItem.Content?.ToString() ?? "";
-                }
+                tipoOperacion = itemSeleccionado.Nombre;
             }
 
             string folio = txtFolioEscritura.Text.Trim();
@@ -338,12 +367,11 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 dpFechaOperacion.SelectedDate = item.FechaOperacion;
 
                 _seleccionAutomatica = true; // Pausamos la alerta
-                foreach (ComboBoxItem cbItem in cmbTipoOperacion.Items)
+                foreach (TipoOperacionItem opItem in cmbTipoOperacion.Items)
                 {
-                    string texto = cbItem.Content is TextBlock tb ? tb.Text : cbItem.Content?.ToString();
-                    if (!string.IsNullOrEmpty(texto) && (texto.Contains(item.TipoOperacion) || item.TipoOperacion.Contains(texto)))
+                    if (opItem.Nombre == item.TipoOperacion)
                     {
-                        cmbTipoOperacion.SelectedItem = cbItem;
+                        cmbTipoOperacion.SelectedItem = opItem;
                         break;
                     }
                 }
