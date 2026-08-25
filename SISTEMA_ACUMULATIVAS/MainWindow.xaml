@@ -35,9 +35,12 @@
                         <TextBlock Text="SISTEMA DE ACUMULATIVAS" 
                                    Foreground="White" FontSize="18" FontWeight="SemiBold"/>
 
-                        <TextBlock x:Name="txtNumeroNotaria" Text="NOTARÍA PÚBLICA No. 215" 
-                                   Foreground="#FFCED4DA" FontSize="12"
-                                   FontWeight="Regular"/>
+                        <TextBlock x:Name="txtBannerNotaria" 
+                           Text="NOTARÍA PÚBLICA" 
+                           FontSize="16" 
+                           FontWeight="Bold" 
+                           Foreground="White" 
+                           VerticalAlignment="Center"/>
                     </StackPanel>
                 </StackPanel>
 

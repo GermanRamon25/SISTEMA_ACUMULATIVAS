@@ -75,11 +75,16 @@ namespace SISTEMA_ACUMULATIVAS
 
                 MessageBox.Show("¡Usuario registrado exitosamente!", "Registro Completo", MessageBoxButton.OK, MessageBoxImage.Information);
                 this.Close(); // Cerrar la ventana de registro
+
+
+
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error al registrar el usuario: " + ex.Message, "Error de Base de Datos", MessageBoxButton.OK, MessageBoxImage.Stop);
             }
+
+
         }
 
         // --- LÓGICA DE BASE DE DATOS ---

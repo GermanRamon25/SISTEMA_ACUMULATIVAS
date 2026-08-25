@@ -1,46 +1,144 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SISTEMA_ACUMULATIVAS.Models;
 
 namespace SISTEMA_ACUMULATIVAS.Conexion
 {
     public class ClsConfiguracion
     {
-        private ClsConexion _conexion = new ClsConexion();
+        // Propiedad global para almacenar los datos en memoria durante la sesión
+        public static NotariaModel NotariaActual { get; set; }
 
-        // Obtener el valor de la UMA desde la BD
+        #region MÉTODOS UMA
+
         public decimal ObtenerUMA()
         {
-            decimal uma = 0;
-            using (SqlConnection conn = _conexion.GetConnection())
+            decimal valorUMA = 0;
+            ClsConexion conexion = new ClsConexion();
+            using (SqlConnection con = conexion.GetConnection())
             {
-                string query = "SELECT Valor FROM Configuracion WHERE Clave = 'UMA'";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                con.Open();
+                string query = "SELECT TOP 1 ValorUMA FROM Configuracion ORDER BY Id DESC";
+                using (SqlCommand cmd = new SqlCommand(query, con))
                 {
                     object result = cmd.ExecuteScalar();
-                    if (result != null) uma = Convert.ToDecimal(result);
+                    if (result != null && result != DBNull.Value)
+                    {
+                        valorUMA = Convert.ToDecimal(result);
+                    }
                 }
             }
-            return uma;
+            return valorUMA;
         }
 
-        // Actualizar el valor de la UMA
-        public void ActualizarUMA(decimal nuevoValor)
+        public bool ActualizarUMA(decimal nuevoValor)
         {
-            using (SqlConnection conn = _conexion.GetConnection())
+            ClsConexion conexion = new ClsConexion();
+            using (SqlConnection con = conexion.GetConnection())
             {
-                // Usamos CONTEXT_INFO para que el Trigger de auditoría sepa quién hizo el cambio (si agregamos trigger a config)
-                // Pero por simplicidad, aquí es update directo.
-                string query = "UPDATE Configuracion SET Valor = @val WHERE Clave = 'UMA'";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                con.Open();
+                string query = @"IF EXISTS (SELECT 1 FROM Configuracion)
+                                    UPDATE Configuracion SET ValorUMA = @ValorUMA, FechaActualizacion = GETDATE()
+                                 ELSE
+                                    INSERT INTO Configuracion (ValorUMA, FechaActualizacion) VALUES (@ValorUMA, GETDATE())";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
                 {
-                    cmd.Parameters.AddWithValue("@val", nuevoValor);
-                    cmd.ExecuteNonQuery();
+                    cmd.Parameters.AddWithValue("@ValorUMA", nuevoValor);
+                    int filas = cmd.ExecuteNonQuery();
+                    return filas > 0;
                 }
             }
         }
+
+        #endregion
+
+        #region MÉTODOS NOTARÍA
+
+        public bool ExisteConfiguracionNotaria()
+        {
+            ClsConexion conexion = new ClsConexion();
+            using (SqlConnection con = conexion.GetConnection())
+            {
+                con.Open();
+                string query = "SELECT COUNT(*) FROM DatosNotaria";
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
+                    return count > 0;
+                }
+            }
+        }
+
+        public NotariaModel CargarDatosNotaria()
+        {
+            ClsConexion conexion = new ClsConexion();
+            using (SqlConnection con = conexion.GetConnection())
+            {
+                con.Open();
+                string query = "SELECT TOP 1 Id, NombreTitular, NumeroNotaria, DireccionCompleta, Telefono, EmailContacto FROM DatosNotaria ORDER BY Id DESC";
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            NotariaActual = new NotariaModel
+                            {
+                                Id = Convert.ToInt32(reader["Id"]),
+                                NombreTitular = reader["NombreTitular"].ToString(),
+                                NumeroNotaria = reader["NumeroNotaria"].ToString(),
+                                DireccionCompleta = reader["DireccionCompleta"].ToString(),
+                                Telefono = reader["Telefono"].ToString(),
+                                EmailContacto = reader["EmailContacto"].ToString()
+                            };
+                            return NotariaActual;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        public bool GuardarOActualizarNotaria(NotariaModel notaria)
+        {
+            ClsConexion conexion = new ClsConexion();
+            using (SqlConnection con = conexion.GetConnection())
+            {
+                con.Open();
+                string query;
+                if (ExisteConfiguracionNotaria())
+                {
+                    query = @"UPDATE DatosNotaria 
+                              SET NombreTitular = @Nombre, NumeroNotaria = @Numero, 
+                                  DireccionCompleta = @Direccion, Telefono = @Tel, 
+                                  EmailContacto = @Email, FechaActualizacion = GETDATE()";
+                }
+                else
+                {
+                    query = @"INSERT INTO DatosNotaria (NombreTitular, NumeroNotaria, DireccionCompleta, Telefono, EmailContacto) 
+                              VALUES (@Nombre, @Numero, @Direccion, @Tel, @Email)";
+                }
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@Nombre", notaria.NombreTitular ?? "");
+                    cmd.Parameters.AddWithValue("@Numero", notaria.NumeroNotaria ?? "");
+                    cmd.Parameters.AddWithValue("@Direccion", notaria.DireccionCompleta ?? "");
+                    cmd.Parameters.AddWithValue("@Tel", notaria.Telefono ?? "");
+                    cmd.Parameters.AddWithValue("@Email", notaria.EmailContacto ?? "");
+
+                    int rows = cmd.ExecuteNonQuery();
+                    if (rows > 0)
+                    {
+                        NotariaActual = notaria;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        #endregion
     }
 }

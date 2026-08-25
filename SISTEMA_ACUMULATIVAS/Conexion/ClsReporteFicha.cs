@@ -7,6 +7,8 @@ namespace SISTEMA_ACUMULATIVAS.Services
 {
     public static class ClsReporteFicha
     {
+
+
         public static string GenerarHtmlFicha(
             string nombreCliente,
             string rfc,

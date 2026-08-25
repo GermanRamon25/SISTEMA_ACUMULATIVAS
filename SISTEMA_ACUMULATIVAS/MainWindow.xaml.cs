@@ -43,6 +43,16 @@ namespace SISTEMA_ACUMULATIVAS
             }
         }
 
+        private void CargarBannerNotaria()
+        {
+            ClsConfiguracion config = new ClsConfiguracion();
+            var notaria = config.CargarDatosNotaria();
+            if (notaria != null && txtBannerNotaria != null)
+            {
+                txtBannerNotaria.Text = $"NOTARÍA PÚBLICA NO. {notaria.NumeroNotaria} - {notaria.NombreTitular.ToUpper()}";
+            }
+        }
+
         private void btnCerrarSesion_Click(object sender, RoutedEventArgs e)
         {
             // 1. Preguntar si está seguro

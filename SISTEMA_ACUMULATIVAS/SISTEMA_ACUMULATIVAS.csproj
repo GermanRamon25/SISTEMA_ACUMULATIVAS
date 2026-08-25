@@ -113,11 +113,15 @@
     </Compile>
     <Compile Include="Conexion\ClsConfiguracion.cs" />
     <Compile Include="Conexion\ClsReporteFicha.cs" />
+    <Compile Include="DatosNotariaWindow.xaml.cs">
+      <DependentUpon>DatosNotariaWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ImportarClientesWindow.xaml.cs">
       <DependentUpon>ImportarClientesWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Models\Acumulado.cs" />
     <Compile Include="Models\Cliente.cs" />
+    <Compile Include="Models\NotariaModel.cs" />
     <Compile Include="Models\Operacion.cs" />
     <Compile Include="Models\ReporteAviso.cs" />
     <Compile Include="OperacionesView.xaml.cs">
@@ -138,6 +142,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ClienteView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DatosNotariaWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
