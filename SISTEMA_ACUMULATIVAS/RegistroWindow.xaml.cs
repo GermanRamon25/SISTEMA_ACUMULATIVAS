@@ -1,18 +1,8 @@
 ﻿using SISTEMA_ACUMULATIVAS.Conexion;
 using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace SISTEMA_ACUMULATIVAS
 {
@@ -30,12 +20,13 @@ namespace SISTEMA_ACUMULATIVAS
         // Permite mover la ventana
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            this.DragMove();
+            if (e.ChangedButton == MouseButton.Left)
+                this.DragMove();
         }
 
         private void btnVolver_Click(object sender, RoutedEventArgs e)
         {
-            this.Close(); // Simplemente cierra esta ventana
+            this.Close();
         }
 
         private void btnRegistrar_Click(object sender, RoutedEventArgs e)
@@ -45,71 +36,101 @@ namespace SISTEMA_ACUMULATIVAS
             string password = txtPassword.Password;
             string confirmPassword = txtConfirmPassword.Password;
 
-            // --- INICIO DE VALIDACIONES ---
             if (string.IsNullOrEmpty(nombre) || string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Todos los campos son obligatorios.", "Error de Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Por favor, complete todos los campos obligatorios.", "Campos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (password != confirmPassword)
             {
-                MessageBox.Show("Las contraseñas no coinciden.", "Error de Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Las contraseñas no coinciden.", "Error de Contraseña", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
-            if (UsuarioExiste(usuario))
-            {
-                MessageBox.Show("El 'Nombre de Usuario' ya está en uso. Por favor, elija otro.", "Usuario Duplicado", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-            // --- FIN DE VALIDACIONES ---
 
             try
             {
-                // 1. Generar el Hash y Salt
+                if (UsuarioExiste(usuario))
+                {
+                    MessageBox.Show("El nombre de usuario ya está registrado.", "Usuario Existente", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Generar Hash y Salt con el esquema de seguridad del proyecto
                 ClsSeguridad.CrearPasswordHash(password, out byte[] hash, out byte[] salt);
 
-                // 2. Registrar en la Base de Datos
+                // Insertar usuario en la BD
                 RegistrarUsuario(nombre, usuario, hash, salt);
 
-                MessageBox.Show("¡Usuario registrado exitosamente!", "Registro Completo", MessageBoxButton.OK, MessageBoxImage.Information);
-                this.Close(); // Cerrar la ventana de registro
+                MessageBox.Show("Usuario registrado exitosamente. A continuación configure los datos de la notaría.",
+                                "Registro Exitoso",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Information);
 
+                // 1. Mostrar la ventana modal de la notaría
+                DatosNotariaWindow notariaWin = new DatosNotariaWindow();
+                notariaWin.Owner = this;
+                notariaWin.ShowDialog();
 
-
+                // 2. Redirigir al Login tras registrar y configurar
+                LoginWindow login = new LoginWindow();
+                login.Show();
+                this.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al registrar el usuario: " + ex.Message, "Error de Base de Datos", MessageBoxButton.OK, MessageBoxImage.Stop);
+                MessageBox.Show("Ocurrió un error al registrar: " + ex.Message, "Error Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-
         }
+
+        // --- LÓGICA DE BASE DE DATOS ---
+
+        // --- LÓGICA DE BASE DE DATOS ---
 
         // --- LÓGICA DE BASE DE DATOS ---
 
         private bool UsuarioExiste(string usuario)
         {
-            using (SqlConnection conn = _conexion.GetConnection())
+            SqlConnection conn = _conexion.GetConnection();
+            try
             {
+                // Si no está abierta, se abre; si GetConnection() ya la abrió, no hace nada
+                if (conn.State == System.Data.ConnectionState.Closed)
+                {
+                    conn.Open();
+                }
+
                 string query = "SELECT 1 FROM Usuarios WHERE Usuario = @usuario";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@usuario", usuario);
                     object result = cmd.ExecuteScalar();
-                    return (result != null); // Si no es nulo, significa que encontró un '1' (existe)
+                    return (result != null);
+                }
+            }
+            finally
+            {
+                // Cerramos explícitamente para liberar el pool y permitir la siguiente consulta
+                if (conn != null && conn.State != System.Data.ConnectionState.Closed)
+                {
+                    conn.Close();
                 }
             }
         }
 
         private void RegistrarUsuario(string nombre, string usuario, byte[] hash, byte[] salt)
         {
-            using (SqlConnection conn = _conexion.GetConnection())
+            SqlConnection conn = _conexion.GetConnection();
+            try
             {
-                // IMPORTANTE: Por seguridad, todos los usuarios nuevos se crean como 'Operador'
+                // Si no está abierta, se abre; si GetConnection() ya la abrió, no hace nada
+                if (conn.State == System.Data.ConnectionState.Closed)
+                {
+                    conn.Open();
+                }
+
                 string query = @"INSERT INTO Usuarios (Usuario, NombreCompleto, PasswordHash, PasswordSalt, Rol, Activo) 
-                                 VALUES (@usuario, @nombre, @hash, @salt, 'Operador', 1)";
+                         VALUES (@usuario, @nombre, @hash, @salt, 'Operador', 1)";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -119,6 +140,14 @@ namespace SISTEMA_ACUMULATIVAS
                     cmd.Parameters.AddWithValue("@salt", salt);
 
                     cmd.ExecuteNonQuery();
+                }
+            }
+            finally
+            {
+                // Cerramos explícitamente al terminar
+                if (conn != null && conn.State != System.Data.ConnectionState.Closed)
+                {
+                    conn.Close();
                 }
             }
         }

@@ -21,6 +21,7 @@ namespace SISTEMA_ACUMULATIVAS
         public MainWindow()
         {
             InitializeComponent();
+            CargarBannerNotaria();
             CargarDatosSesion();
         }
 
