@@ -1,46 +1,35 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SISTEMA_ACUMULATIVAS.Conexion;
+using System.Data.SqlClient;
 
 namespace SISTEMA_ACUMULATIVAS.Conexion
 {
     public class ClsConexion
     {
-        // CAMBIO IMPORTANTE: Apuntando a la BD correcta
         private readonly string _connectionString = @"Server=ALONDRA\SQLEXPRESS;Database=ACUMULATIVAS_DB;Integrated Security=True;";
+
         public SqlConnection GetConnection()
         {
             SqlConnection conn = new SqlConnection(_connectionString);
-            try
+            if (conn.State == ConnectionState.Closed)
             {
                 conn.Open();
-                return conn;
             }
-            catch (Exception ex)
-            {
-                conn.Close();
-                // En WPF, es mejor lanzar la excepción para que la UI la maneje
-                throw new Exception("Error al conectar con la base de datos: " + ex.Message, ex);
-            }
+            return conn;
         }
+
+        public SqlConnection EstablecerConexion()
+        {
+            return new SqlConnection(_connectionString);
+        }
+
         public bool TestConnection()
         {
             try
             {
                 using (SqlConnection conn = GetConnection())
                 {
-                    // GetConnection() ya abre la conexión, 
-                    // o puedes asegurar con:
-                    if (conn.State != System.Data.ConnectionState.Open)
-                    {
-                        conn.Open();
-                    }
-                    return true;
+                    return conn.State == ConnectionState.Open;
                 }
             }
             catch

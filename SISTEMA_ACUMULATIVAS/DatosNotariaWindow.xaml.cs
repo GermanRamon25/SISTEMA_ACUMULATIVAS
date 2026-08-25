@@ -35,7 +35,7 @@ namespace SISTEMA_ACUMULATIVAS
             if (config.GuardarOActualizarNotaria(model))
             {
                 MessageBox.Show("Datos de la notaría sincronizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                this.DialogResult = true;
+             
                 this.Close();
             }
             else

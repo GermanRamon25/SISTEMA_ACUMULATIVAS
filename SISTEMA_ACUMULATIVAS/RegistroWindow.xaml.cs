@@ -17,7 +17,6 @@ namespace SISTEMA_ACUMULATIVAS
             txtNombreCompleto.Focus();
         }
 
-        // Permite mover la ventana
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)
@@ -50,16 +49,17 @@ namespace SISTEMA_ACUMULATIVAS
 
             try
             {
+                // 1. Validar si ya existe el usuario
                 if (UsuarioExiste(usuario))
                 {
                     MessageBox.Show("El nombre de usuario ya está registrado.", "Usuario Existente", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                // Generar Hash y Salt con el esquema de seguridad del proyecto
+                // 2. Generar Hash y Salt
                 ClsSeguridad.CrearPasswordHash(password, out byte[] hash, out byte[] salt);
 
-                // Insertar usuario en la BD
+                // 3. Registrar en BD
                 RegistrarUsuario(nombre, usuario, hash, salt);
 
                 MessageBox.Show("Usuario registrado exitosamente. A continuación configure los datos de la notaría.",
@@ -67,14 +67,12 @@ namespace SISTEMA_ACUMULATIVAS
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Information);
 
-                // 1. Mostrar la ventana modal de la notaría
+                // 4. Abrir la ventana modal de datos de la Notaría
                 DatosNotariaWindow notariaWin = new DatosNotariaWindow();
                 notariaWin.Owner = this;
                 notariaWin.ShowDialog();
 
-                // 2. Redirigir al Login tras registrar y configurar
-                LoginWindow login = new LoginWindow();
-                login.Show();
+                // 5. Cerrar registro (vuelve automáticamente a la ventana de Login original)
                 this.Close();
             }
             catch (Exception ex)
@@ -83,23 +81,12 @@ namespace SISTEMA_ACUMULATIVAS
             }
         }
 
-        // --- LÓGICA DE BASE DE DATOS ---
-
-        // --- LÓGICA DE BASE DE DATOS ---
-
-        // --- LÓGICA DE BASE DE DATOS ---
+        // --- MÉTODOS BD ---
 
         private bool UsuarioExiste(string usuario)
         {
-            SqlConnection conn = _conexion.GetConnection();
-            try
+            using (SqlConnection conn = _conexion.GetConnection())
             {
-                // Si no está abierta, se abre; si GetConnection() ya la abrió, no hace nada
-                if (conn.State == System.Data.ConnectionState.Closed)
-                {
-                    conn.Open();
-                }
-
                 string query = "SELECT 1 FROM Usuarios WHERE Usuario = @usuario";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -108,29 +95,14 @@ namespace SISTEMA_ACUMULATIVAS
                     return (result != null);
                 }
             }
-            finally
-            {
-                // Cerramos explícitamente para liberar el pool y permitir la siguiente consulta
-                if (conn != null && conn.State != System.Data.ConnectionState.Closed)
-                {
-                    conn.Close();
-                }
-            }
         }
 
         private void RegistrarUsuario(string nombre, string usuario, byte[] hash, byte[] salt)
         {
-            SqlConnection conn = _conexion.GetConnection();
-            try
+            using (SqlConnection conn = _conexion.GetConnection())
             {
-                // Si no está abierta, se abre; si GetConnection() ya la abrió, no hace nada
-                if (conn.State == System.Data.ConnectionState.Closed)
-                {
-                    conn.Open();
-                }
-
                 string query = @"INSERT INTO Usuarios (Usuario, NombreCompleto, PasswordHash, PasswordSalt, Rol, Activo) 
-                         VALUES (@usuario, @nombre, @hash, @salt, 'Operador', 1)";
+                                 VALUES (@usuario, @nombre, @hash, @salt, 'Operador', 1)";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -140,14 +112,6 @@ namespace SISTEMA_ACUMULATIVAS
                     cmd.Parameters.AddWithValue("@salt", salt);
 
                     cmd.ExecuteNonQuery();
-                }
-            }
-            finally
-            {
-                // Cerramos explícitamente al terminar
-                if (conn != null && conn.State != System.Data.ConnectionState.Closed)
-                {
-                    conn.Close();
                 }
             }
         }

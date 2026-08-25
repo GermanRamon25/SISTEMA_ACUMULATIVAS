@@ -16,7 +16,7 @@ namespace SISTEMA_ACUMULATIVAS
             InitializeComponent();
             _conexion = new ClsConexion();
 
-            // Poner foco en el campo de usuario al abrir la ventana
+            // Foco en el campo de usuario al abrir
             this.Loaded += (s, e) => txtUsuario.Focus();
         }
 
@@ -71,6 +71,7 @@ namespace SISTEMA_ACUMULATIVAS
         {
             try
             {
+                txtErrorMessage.Visibility = Visibility.Collapsed;
                 RegistroWindow registroVentana = new RegistroWindow();
                 registroVentana.Owner = this;
                 registroVentana.ShowDialog();
@@ -126,7 +127,20 @@ namespace SISTEMA_ACUMULATIVAS
                 {
                     EjecutarMantenimientoDiario();
 
-                    this.DialogResult = true;
+                    // Comprobar si existen datos de la notaría configurados
+                    ClsConfiguracion config = new ClsConfiguracion();
+                    if (!config.ExisteConfiguracionNotaria())
+                    {
+                        DatosNotariaWindow notariaWin = new DatosNotariaWindow();
+                        notariaWin.Owner = this;
+                        notariaWin.ShowDialog();
+                    }
+
+                    // Abrir MainWindow
+                    MainWindow main = new MainWindow();
+                    main.Show();
+
+                    // Cerrar Login
                     this.Close();
                 }
                 else
