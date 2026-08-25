@@ -48,7 +48,7 @@
                 </StackPanel>
             </TabItem>
 
-            <!-- NUEVA PESTAÑA: CATÁLOGO DE OPERACIONES -->
+            <!-- PESTAÑA: CATÁLOGO DE OPERACIONES -->
             <TabItem Header="Catálogo de Operaciones (LFPIORPI)">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
@@ -110,6 +110,7 @@
                 </Grid>
             </TabItem>
 
+            <!-- PESTAÑA: PAPELERA -->
             <TabItem Header="Papelera de Reciclaje (Clientes)">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
@@ -135,20 +136,33 @@
                 </Grid>
             </TabItem>
 
+            <!-- PESTAÑA: BITÁCORA DE SEGURIDAD (MEJORADA) -->
             <TabItem Header="Bitácora de Seguridad (Logs)">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Button Content="🔄 Actualizar Logs" Click="btnActualizarLogs_Click" HorizontalAlignment="Left" Margin="0,0,0,10"/>
 
-                    <DataGrid Grid.Row="1" x:Name="dgLogs" AutoGenerateColumns="False" IsReadOnly="True">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Content="🔄 Actualizar Bitácora" Click="btnActualizarLogs_Click" HorizontalAlignment="Left" Padding="12,6" Background="#0F172A" Foreground="White" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" x:Name="dgLogs" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#E2E8F0" RowHeight="38">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha}" Width="140"/>
-                            <DataGridTextColumn Header="Usuario" Binding="{Binding Usuario}" Width="100"/>
-                            <DataGridTextColumn Header="Acción" Binding="{Binding Accion}" Width="150"/>
-                            <DataGridTextColumn Header="Detalle" Binding="{Binding Detalle}" Width="*"/>
+                            <DataGridTextColumn Header="Fecha y Hora" Binding="{Binding Fecha, StringFormat='dd/MM/yyyy HH:mm:ss'}" Width="160"/>
+                            <DataGridTextColumn Header="Usuario Responsable" Binding="{Binding Usuario}" Width="140"/>
+
+                            <!-- Columna Traducida a Lenguaje Natural -->
+                            <DataGridTemplateColumn Header="Acción Realizada" Width="180">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding AccionAmigable}" Foreground="{Binding ColorAccion}" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Detalle de la Transacción" Binding="{Binding Detalle}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

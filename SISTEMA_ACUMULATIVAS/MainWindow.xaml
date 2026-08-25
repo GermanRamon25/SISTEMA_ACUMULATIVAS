@@ -114,7 +114,7 @@
             </TabItem>
 
             <!-- CAMBIO: Se eliminó Visibility="Collapsed" para que siempre esté visible -->
-            <TabItem x:Name="tabPanelControl" Header="⚙️ Ajustes">
+            <TabItem x:Name="tabPanelControl" Header="⚙️ Ajustes Generales">
                 <views:PanelControlView />
             </TabItem>
 

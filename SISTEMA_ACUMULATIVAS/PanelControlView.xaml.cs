@@ -221,13 +221,36 @@ namespace SISTEMA_ACUMULATIVAS.Views
             else MessageBox.Show("Seleccione un cliente de la lista.");
         }
 
-        // --- 4. SECURITY LOGS ---
+        // --- 4. SECURITY LOGS (AUDIT) ---
         public class LogItem
         {
             public DateTime Fecha { get; set; }
             public string Usuario { get; set; }
-            public string Accion { get; set; }
+            public string Accion { get; set; } // Valor técnico original
             public string Detalle { get; set; }
+
+            // Traducción a lenguaje natural amigable para la notaría
+            public string AccionAmigable
+            {
+                get
+                {
+                    if (Accion == "INSERT Operacion") return "📝 Registro de Operación";
+                    if (Accion == "UPDATE Operacion") return "✏️ Modificación de Operación";
+                    if (Accion == "INSERT Cliente") return "👤 Nuevo Cliente";
+                    if (Accion == "UPDATE Cliente") return "🔄 Actualización de Cliente";
+                    return Accion;
+                }
+            }
+
+            public string ColorAccion
+            {
+                get
+                {
+                    if (Accion.Contains("INSERT")) return "#15803D"; // Verde corporativo
+                    if (Accion.Contains("UPDATE")) return "#B45309"; // Oro/Naranja
+                    return "#475569";
+                }
+            }
         }
 
         private void CargarLogs()
