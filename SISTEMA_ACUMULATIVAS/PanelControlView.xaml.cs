@@ -53,7 +53,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             else MessageBox.Show("Ingrese un número válido.");
         }
 
-        // --- 2. CATÁLOGO DE OPERACIONES (NUEVO) ---
+        // --- 2. CATÁLOGO DE OPERACIONES ---
         public class CatalogoOperacionItem
         {
             public int Id { get; set; }
@@ -128,6 +128,41 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
+        private void btnEliminarOperacion_Click(object sender, RoutedEventArgs e)
+        {
+            if (dgCatalogoOperaciones.SelectedItem is CatalogoOperacionItem seleccionada)
+            {
+                if (MessageBox.Show($"¿Está seguro de eliminar el tipo de operación '{seleccionada.Nombre}'?",
+                    "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        using (SqlConnection conn = _conexion.GetConnection())
+                        {
+                            string query = "DELETE FROM Cat_TiposOperacion WHERE Id = @Id";
+                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            {
+                                cmd.Parameters.AddWithValue("@Id", seleccionada.Id);
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+
+                        MessageBox.Show("Operación eliminada del catálogo exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                        CargarCatalogoOperaciones();
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("No se puede eliminar esta operación porque ya se encuentra vinculada a registros de operaciones activas en el sistema.",
+                            "Aviso de Integridad", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Por favor, seleccione de la tabla la operación que desea eliminar.", "Selección Requerida", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
         // --- 3. RECYCLE BIN ---
         private void CargarPapelera()
         {
@@ -186,7 +221,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             else MessageBox.Show("Seleccione un cliente de la lista.");
         }
 
-        // --- 4. SECURITY LOGS (AUDIT) ---
+        // --- 4. SECURITY LOGS ---
         public class LogItem
         {
             public DateTime Fecha { get; set; }

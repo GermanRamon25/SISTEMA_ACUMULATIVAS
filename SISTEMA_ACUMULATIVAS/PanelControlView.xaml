@@ -15,18 +15,24 @@
             <TabItem Header="Configuración General">
                 <StackPanel Margin="20">
 
-                    <!-- MENSAJE DE RESPONSABILIDAD LEGAL -->
-                    <Border Background="#FFF3CD" BorderBrush="#FFC107" BorderThickness="1" CornerRadius="6" Padding="15" Margin="0,0,0,25">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⚠️" FontSize="32" VerticalAlignment="Center" Margin="0,0,15,0"/>
-                            <TextBlock TextWrapping="Wrap" VerticalAlignment="Center" Foreground="#856404" FontSize="13">
-                                <Run FontWeight="Bold" Text="AVISO DE RESPONSABILIDAD LEGAL (LFPIORPI):"/>
-                                <LineBreak/>
-                                <Run Text="La alteración del valor de la Unidad de Medida y Actualización (UMA) impacta de manera directa e inmediata en el cálculo de los umbrales para la prevención de lavado de dinero."/>
-                                <LineBreak/>
-                                <Run Text="El Notario Público titular y el operador en turno asumen la estricta responsabilidad de verificar que el monto ingresado coincida exactamente con el publicado de manera oficial por el INEGI."/>
-                            </TextBlock>
-                        </StackPanel>
+                    <!-- MENSAJE DE RESPONSABILIDAD LEGAL AMPLIADO -->
+                    <Border Background="#FFF3CD" BorderBrush="#FFC107" BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,0,25">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Icono de advertencia -->
+                            <TextBlock Grid.Column="0" Text="⚠️" FontSize="28" VerticalAlignment="Top" Margin="0,2,15,0"/>
+
+                            <!-- Párrafos informativos con ancho completo y ajuste vertical -->
+                            <StackPanel Grid.Column="1">
+                                <TextBlock FontWeight="Bold" Foreground="#856404" FontSize="13" Text="AVISO DE RESPONSABILIDAD LEGAL (LFPIORPI):" Margin="0,0,0,5"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#856404" FontSize="12.5" LineHeight="18" Text="La modificación del valor de la UMA, así como la gestión y adición de tipos de operaciones o sus criterios de aviso obligatorio, impactan directamente en el cumplimiento normativo para la prevención de lavado de dinero." Margin="0,0,0,6"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#856404" FontSize="12.5" LineHeight="18" Text="El Notario Público titular y el personal autorizado asumen la estricta responsabilidad de verificar que los parámetros configurados coincidan exactamente con la legislación vigente y las publicaciones oficiales del INEGI y la UIF."/>
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
                     <TextBlock Text="Valor de la UMA (Actualizable)" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -47,11 +53,12 @@
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
                     <!-- Formulario para agregar una nueva operación -->
-                    <Border Grid.Row="0" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="15" Margin="0,0,0,15">
+                    <Border Grid.Row="0" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="15" Margin="0,0,0,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -74,8 +81,15 @@
                         </Grid>
                     </Border>
 
+                    <!-- Barra de Botones de Acción para la Tabla -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button x:Name="btnEliminarOperacion" Content="🗑️ Eliminar Operación Seleccionada" 
+                                Background="#DC2626" Foreground="White" FontWeight="Bold" Padding="12,6" 
+                                BorderThickness="0" Cursor="Hand" Click="btnEliminarOperacion_Click"/>
+                    </StackPanel>
+
                     <!-- Tabla del Catálogo -->
-                    <DataGrid Grid.Row="1" x:Name="dgCatalogoOperaciones" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+                    <DataGrid Grid.Row="2" x:Name="dgCatalogoOperaciones" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="40"/>
                             <DataGridTextColumn Header="Tipo de Operación" Binding="{Binding Nombre}" Width="*"/>

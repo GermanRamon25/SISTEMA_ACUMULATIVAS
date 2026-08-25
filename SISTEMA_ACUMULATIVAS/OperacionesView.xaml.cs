@@ -180,17 +180,21 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- ALERTA DE ACTIVIDAD VULNERABLE AL SELECCIONAR ---
+        // --- ALERTA CONDICIONAL: SOLO SI ES AVISO OBLIGATORIO ---
         private void cmbTipoOperacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_seleccionAutomatica) return;
 
             if (cmbTipoOperacion.SelectedItem is TipoOperacionItem itemSeleccionado)
             {
-                MessageBox.Show($"¡ATENCIÓN!\n\nHa seleccionado:\n{itemSeleccionado.Nombre}\n\nEsta operación es catalogada como ACTIVIDAD VULNERABLE. Por favor, asegúrese de recabar la documentación de identificación requerida, aun si no se alcanza el umbral de UMAS para el aviso correspondiente.",
-                    "Alerta Ley Antilavado",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                // AQUÍ ESTÁ EL CAMBIO: Validamos que realmente sea un aviso obligatorio según la BD
+                if (itemSeleccionado.EsAvisoObligatorio)
+                {
+                    MessageBox.Show($"¡ATENCIÓN - AVISO OBLIGATORIO!\n\nHa seleccionado:\n{itemSeleccionado.Nombre}\n\nEsta operación requiere la presentación de AVISO OBLIGATORIO ante el portal de la UIF, independientemente de que no se rebase el umbral de UMAS. Asegúrese de integrar el expediente correspondiente.",
+                        "Alerta Ley Antilavado",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
             }
         }
 
