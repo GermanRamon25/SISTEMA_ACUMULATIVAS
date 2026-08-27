@@ -1,50 +1,264 @@
 ﻿<Window x:Class="SISTEMA_ACUMULATIVAS.DatosNotariaWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Datos de la Notaría" Height="520" Width="420"
-        WindowStartupLocation="CenterScreen" WindowStyle="None"
-        AllowsTransparency="True" Background="Transparent">
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS"
+        mc:Ignorable="d"
+        Title="Configuración de Datos de la Notaría" 
+        Height="676" Width="520"
+        WindowStartupLocation="CenterScreen" 
+        WindowStyle="None"
+        AllowsTransparency="True" 
+        Background="Transparent"
+        SnapsToDevicePixels="True"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    <Border Background="#F4F6F9" CornerRadius="12" BorderBrush="#1F364D" BorderThickness="1">
+    <Window.Resources>
+        <!-- ========== PALETA DE COLORES ========== -->
+        <SolidColorBrush x:Key="PrimaryDark" Color="#1A2332"/>
+        <SolidColorBrush x:Key="PrimaryBlue" Color="#2C5F8A"/>
+        <SolidColorBrush x:Key="PrimaryLight" Color="#3A7BBF"/>
+        <SolidColorBrush x:Key="AccentGold" Color="#D4A843"/>
+        <SolidColorBrush x:Key="SecondaryGray" Color="#8899B0"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="TextLight" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="ControlBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextDark" Color="#1A2332"/>
+        <SolidColorBrush x:Key="ErrorRed" Color="#E74C3C"/>
+
+        <!-- ========== SOMBRA DE LA TARJETA ========== -->
+        <DropShadowEffect x:Key="CardShadow" 
+                          Color="#000000" 
+                          Direction="270" 
+                          ShadowDepth="4" 
+                          BlurRadius="25" 
+                          Opacity="0.4"/>
+
+        <!-- ========== ESTILO PARA TEXTBOX MODERNO ========== -->
+        <Style x:Key="ModernInputStyle" TargetType="{x:Type TextBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Border x:Name="border" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="10">
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Focusable="False" 
+                                          HorizontalScrollBarVisibility="Hidden" 
+                                          VerticalScrollBarVisibility="Hidden"
+                                          Margin="2,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ========== ESTILO PARA BOTÓN PRINCIPAL ========== -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="{StaticResource PrimaryBlue}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="10" 
+                                BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1A3B5C"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ========== ESTILO PARA BOTÓN SECUNDARIO / CANCELAR ========== -->
+        <Style x:Key="LinkButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryGray}"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource ErrorRed}"/>
+                    <Setter Property="TextBlock.TextDecorations" Value="Underline"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <!-- ========== TARJETA PRINCIPAL ========== -->
+    <Border Background="{StaticResource PrimaryDark}" 
+            CornerRadius="20" 
+            Effect="{StaticResource CardShadow}"
+            Margin="20">
+
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="55"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="40"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Header -->
-            <Border Grid.Row="0" Background="#1F364D" CornerRadius="11,11,0,0">
-                <Grid Margin="15,0">
-                    <TextBlock Text="Datos de la Notaría" Foreground="White" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <Button Content="✕" Width="30" Height="30" HorizontalAlignment="Right" Background="Transparent" Foreground="White" BorderThickness="0" FontSize="14" Click="BtnCerrar_Click"/>
+            <!-- ========== HEADER ========== -->
+            <Border Grid.Row="0" Margin="25,25,25,10">
+                <Grid>
+                    <StackPanel>
+                        <TextBlock Text="CONFIGURACIÓN"
+                                   Foreground="{StaticResource AccentGold}"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   FontFamily="Segoe UI"
+                                   FontStretch="Expanded"/>
+                        <TextBlock Text="Datos de la Notaría"
+                                   Foreground="{StaticResource TextLight}"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   FontFamily="Segoe UI"/>
+                    </StackPanel>
+
+                    <!-- Botón Cerrar (✕) superior -->
+                    <Button Content="✕" 
+                            Width="30" Height="30" 
+                            HorizontalAlignment="Right" 
+                            VerticalAlignment="Top"
+                            Background="Transparent" 
+                            Foreground="{StaticResource SecondaryGray}" 
+                            BorderThickness="0" 
+                            FontSize="16" 
+                            Cursor="Hand"
+                            Click="BtnCerrar_Click"/>
                 </Grid>
             </Border>
 
-            <!-- Formulario -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="20,15,20,10">
+            <!-- ========== CONTENIDO / FORMULARIO ========== -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="25,10">
                 <StackPanel>
-                    <TextBlock Text="Nombre Completo" Foreground="#334155" Margin="0,0,0,5" FontWeight="Medium"/>
-                    <TextBox x:Name="txtNombreTitular" Height="35" Margin="0,0,0,12" VerticalContentAlignment="Center" Padding="8,0"/>
 
-                    <TextBlock Text="Número de Notaría" Foreground="#334155" Margin="0,0,0,5" FontWeight="Medium"/>
-                    <TextBox x:Name="txtNumeroNotaria" Height="35" Margin="0,0,0,12" VerticalContentAlignment="Center" Padding="8,0"/>
+                    <!-- Campo: Nombre Titular -->
+                    <TextBlock Text="Nombre Completo del Titular (Notario):" 
+                               Foreground="{StaticResource TextLight}" 
+                               FontSize="13" 
+                               FontWeight="SemiBold"
+                               FontFamily="Segoe UI"
+                               Margin="2,0,0,5"/>
+                    <TextBox x:Name="txtNombreTitular" 
+                             Style="{StaticResource ModernInputStyle}" 
+                             Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Dirección Completa" Foreground="#334155" Margin="0,0,0,5" FontWeight="Medium"/>
-                    <TextBox x:Name="txtDireccion" Height="35" Margin="0,0,0,12" VerticalContentAlignment="Center" Padding="8,0"/>
+                    <!-- Campo: Número Notaría -->
+                    <TextBlock Text="Número de Notaría:" 
+                               Foreground="{StaticResource TextLight}" 
+                               FontSize="13" 
+                               FontWeight="SemiBold"
+                               FontFamily="Segoe UI"
+                               Margin="2,0,0,5"/>
+                    <TextBox x:Name="txtNumeroNotaria" 
+                             Style="{StaticResource ModernInputStyle}" 
+                             Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Teléfono (10 dígitos)" Foreground="#334155" Margin="0,0,0,5" FontWeight="Medium"/>
-                    <TextBox x:Name="txtTelefono" Height="35" Margin="0,0,0,12" VerticalContentAlignment="Center" Padding="8,0"/>
+                    <!-- Campo: Dirección -->
+                    <TextBlock Text="Dirección Completa:" 
+                               Foreground="{StaticResource TextLight}" 
+                               FontSize="13" 
+                               FontWeight="SemiBold"
+                               FontFamily="Segoe UI"
+                               Margin="2,0,0,5"/>
+                    <TextBox x:Name="txtDireccion" 
+                             Style="{StaticResource ModernInputStyle}" 
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             Height="60"
+                             Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Email de Contacto" Foreground="#334155" Margin="0,0,0,5" FontWeight="Medium"/>
-                    <TextBox x:Name="txtEmail" Height="35" Margin="0,0,0,18" VerticalContentAlignment="Center" Padding="8,0"/>
+                    <!-- Campo: Teléfono -->
+                    <TextBlock Text="Teléfono de Contacto (10 dígitos):" 
+                               Foreground="{StaticResource TextLight}" 
+                               FontSize="13" 
+                               FontWeight="SemiBold"
+                               FontFamily="Segoe UI"
+                               Margin="2,0,0,5"/>
+                    <TextBox x:Name="txtTelefono" 
+                             Style="{StaticResource ModernInputStyle}" 
+                             Margin="0,0,0,15"/>
 
-                    <Button x:Name="btnGuardar" Content="GUARDAR Y SINCRONIZAR" Background="#1F364D" Foreground="White" Height="42" FontWeight="Bold" Click="BtnGuardar_Click"/>
+                    <!-- Campo: Email -->
+                    <TextBlock Text="Email de Contacto:" 
+                               Foreground="{StaticResource TextLight}" 
+                               FontSize="13" 
+                               FontWeight="SemiBold"
+                               FontFamily="Segoe UI"
+                               Margin="2,0,0,15"/>
+                    <TextBox x:Name="txtEmail" 
+                             Style="{StaticResource ModernInputStyle}" 
+                             Margin="0,0,0,15"/>
+
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- Footer / Cancelar -->
-            <Button Grid.Row="2" Content="Cancelar" Foreground="#D9534F" Background="Transparent" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center" Click="BtnCerrar_Click"/>
+            <!-- ========== FOOTER / BOTONES DE ACCIÓN ========== -->
+            <Border Grid.Row="2" Padding="25,10,25,25">
+                <StackPanel>
+                    <Button x:Name="btnGuardar" 
+                            Content="GUARDAR CONFIGURACIÓN" 
+                            Style="{StaticResource PrimaryButtonStyle}" 
+                            Click="BtnGuardar_Click"
+                            Margin="0,0,0,10"/>
+
+                    <Button x:Name="btnCancelar"
+                            Content="Cancelar y salir" 
+                            Style="{StaticResource LinkButtonStyle}" 
+                            Click="BtnCerrar_Click"/>
+                </StackPanel>
+            </Border>
+
         </Grid>
     </Border>
 </Window>

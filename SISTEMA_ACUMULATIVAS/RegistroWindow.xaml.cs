@@ -9,6 +9,8 @@ namespace SISTEMA_ACUMULATIVAS
     public partial class RegistroWindow : Window
     {
         private ClsConexion _conexion;
+        private bool _passwordVisible = false;
+        private bool _confirmPasswordVisible = false;
 
         public RegistroWindow()
         {
@@ -17,11 +19,63 @@ namespace SISTEMA_ACUMULATIVAS
             txtNombreCompleto.Focus();
         }
 
-        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        // ============================================================
+        //              EVENTO DE ARRASTRE DE VENTANA
+        // ============================================================
+
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            if (e.ButtonState == MouseButtonState.Pressed)
+            {
                 this.DragMove();
+            }
         }
+
+        // ============================================================
+        //              TOGGLE DE CONTRASEÑAS
+        // ============================================================
+
+        private void chkMostrarPass_Checked(object sender, RoutedEventArgs e)
+        {
+            _passwordVisible = true;
+            txtPasswordVisible.Text = txtPassword.Password;
+            txtPassword.Visibility = Visibility.Collapsed;
+            txtPasswordVisible.Visibility = Visibility.Visible;
+            txtPasswordVisible.Focus();
+            txtPasswordVisible.CaretIndex = txtPasswordVisible.Text.Length;
+        }
+
+        private void chkMostrarPass_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _passwordVisible = false;
+            txtPassword.Password = txtPasswordVisible.Text;
+            txtPasswordVisible.Visibility = Visibility.Collapsed;
+            txtPassword.Visibility = Visibility.Visible;
+            txtPassword.Focus();
+        }
+
+        private void chkMostrarConfirmPass_Checked(object sender, RoutedEventArgs e)
+        {
+            _confirmPasswordVisible = true;
+            txtConfirmPasswordVisible.Text = txtConfirmPassword.Password;
+            txtConfirmPassword.Visibility = Visibility.Collapsed;
+            txtConfirmPasswordVisible.Visibility = Visibility.Visible;
+            txtConfirmPasswordVisible.Focus();
+            txtConfirmPasswordVisible.CaretIndex = txtConfirmPasswordVisible.Text.Length;
+        }
+
+        private void chkMostrarConfirmPass_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _confirmPasswordVisible = false;
+            txtConfirmPassword.Password = txtConfirmPasswordVisible.Text;
+            txtConfirmPasswordVisible.Visibility = Visibility.Collapsed;
+            txtConfirmPassword.Visibility = Visibility.Visible;
+            txtConfirmPassword.Focus();
+        }
+
+        // ============================================================
+        //              EVENTOS DE NAVEGACIÓN Y ACCIÓN
+        // ============================================================
 
         private void btnVolver_Click(object sender, RoutedEventArgs e)
         {
@@ -32,8 +86,8 @@ namespace SISTEMA_ACUMULATIVAS
         {
             string nombre = txtNombreCompleto.Text.Trim();
             string usuario = txtUsuario.Text.Trim();
-            string password = txtPassword.Password;
-            string confirmPassword = txtConfirmPassword.Password;
+            string password = _passwordVisible ? txtPasswordVisible.Text : txtPassword.Password;
+            string confirmPassword = _confirmPasswordVisible ? txtConfirmPasswordVisible.Text : txtConfirmPassword.Password;
 
             if (string.IsNullOrEmpty(nombre) || string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
             {
@@ -72,7 +126,7 @@ namespace SISTEMA_ACUMULATIVAS
                 notariaWin.Owner = this;
                 notariaWin.ShowDialog();
 
-                // 5. Cerrar registro (vuelve automáticamente a la ventana de Login original)
+                // 5. Cerrar registro
                 this.Close();
             }
             catch (Exception ex)
@@ -81,7 +135,9 @@ namespace SISTEMA_ACUMULATIVAS
             }
         }
 
-        // --- MÉTODOS BD ---
+        // ============================================================
+        //              MÉTODOS BD
+        // ============================================================
 
         private bool UsuarioExiste(string usuario)
         {

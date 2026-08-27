@@ -5,52 +5,322 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS"
         mc:Ignorable="d"
-        Title="RegistroWindow" Height="500" Width="400"
+        Title="Registro de Usuario - Sistema de Acumulativas"
+        Height="700" Width="520"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="None" ResizeMode="NoResize"
-        Background="#FF1E1E1E">
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Background="Transparent"
+        SnapsToDevicePixels="True"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
-        <StackPanel Margin="30">
+    <Window.Resources>
+        <!-- ========== COLORES ========== -->
+        <SolidColorBrush x:Key="PrimaryDark" Color="#1A2332"/>
+        <SolidColorBrush x:Key="PrimaryBlue" Color="#2C5F8A"/>
+        <SolidColorBrush x:Key="PrimaryLight" Color="#3A7BBF"/>
+        <SolidColorBrush x:Key="AccentGold" Color="#D4A843"/>
+        <SolidColorBrush x:Key="SecondaryGray" Color="#8899B0"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="TextLight" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="ControlBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextDark" Color="#1A2332"/>
+        <SolidColorBrush x:Key="ErrorRed" Color="#E74C3C"/>
 
-            <TextBlock Text="REGISTRO DE USUARIO" 
-                       FontSize="22" FontWeight="Bold" 
-                       Foreground="White" 
-                       HorizontalAlignment="Center" Margin="0,10,0,30"/>
+        <!-- ========== SOMBRA ========== -->
+        <DropShadowEffect x:Key="CardShadow" 
+                          Color="#000000" 
+                          Direction="270" 
+                          ShadowDepth="4" 
+                          BlurRadius="25" 
+                          Opacity="0.4"/>
 
+        <!-- ========== ESTILO TEXTBOX ========== -->
+        <Style x:Key="InputStyle" TargetType="{x:Type TextBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Border x:Name="border" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="10">
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Focusable="False" 
+                                          HorizontalScrollBarVisibility="Hidden" 
+                                          VerticalScrollBarVisibility="Hidden"
+                                          Margin="2,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ========== ESTILO PASSWORDBOX ========== -->
+        <Style x:Key="PasswordInputStyle" TargetType="{x:Type PasswordBox}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type PasswordBox}">
+                        <Border x:Name="border" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="10">
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Focusable="False" 
+                                          HorizontalScrollBarVisibility="Hidden" 
+                                          VerticalScrollBarVisibility="Hidden"
+                                          Margin="2,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
+                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ========== ESTILO TOGGLE PASSWORD ========== -->
+        <Style x:Key="TogglePasswordStyle" TargetType="{x:Type CheckBox}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <TextBlock x:Name="Icon" 
+                                   Text="👁‍🗨"  
+                                   FontSize="18" 
+                                   Foreground="{StaticResource SecondaryGray}"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Icon" Property="Foreground" Value="{StaticResource PrimaryBlue}"/>
+                                <Setter TargetName="Icon" Property="Text" Value="👁️"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Icon" Property="Foreground" Value="{StaticResource PrimaryLight}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ========== ESTILO BOTÓN PRINCIPAL ========== -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="{StaticResource PrimaryBlue}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="10" 
+                                BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1A3B5C"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ========== ESTILO BOTÓN VOLVER ========== -->
+        <Style x:Key="LinkButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryGray}"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource AccentGold}"/>
+                    <Setter Property="TextBlock.TextDecorations" Value="Underline"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <!-- ========== TARJETA PRINCIPAL ========== -->
+    <Border Background="{StaticResource PrimaryDark}" 
+            CornerRadius="20" 
+            Effect="{StaticResource CardShadow}"
+            Margin="20">
+
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="380" Margin="25">
+
+            <!-- Título -->
+            <TextBlock Text="REGISTRO DE USUARIO"
+                       Foreground="{StaticResource TextLight}"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,5"/>
+
+            <TextBlock Text="Sistema de Acumulativas"
+                       Foreground="{StaticResource AccentGold}"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,25"/>
+
+            <!-- Campo: Nombre Completo -->
             <TextBlock Text="Nombre Completo:" 
-                       Foreground="White" FontWeight="Medium" Margin="0,0,0,5"/>
+                       Foreground="{StaticResource TextLight}" 
+                       FontSize="13" 
+                       FontWeight="SemiBold"
+                       FontFamily="Segoe UI"
+                       Margin="2,0,0,4"/>
             <TextBox x:Name="txtNombreCompleto" 
-                     FontSize="14" Padding="5" Margin="0,0,0,15"/>
+                     Style="{StaticResource InputStyle}" 
+                     Margin="0,0,0,14"/>
 
+            <!-- Campo: Nombre de Usuario -->
             <TextBlock Text="Nombre de Usuario:" 
-                       Foreground="White" FontWeight="Medium" Margin="0,0,0,5"/>
+                       Foreground="{StaticResource TextLight}" 
+                       FontSize="13" 
+                       FontWeight="SemiBold"
+                       FontFamily="Segoe UI"
+                       Margin="2,0,0,4"/>
             <TextBox x:Name="txtUsuario" 
-                     FontSize="14" Padding="5" Margin="0,0,0,15"/>
+                     Style="{StaticResource InputStyle}" 
+                     Margin="0,0,0,14"/>
 
+            <!-- Campo: Contraseña -->
             <TextBlock Text="Contraseña:" 
-                       Foreground="White" FontWeight="Medium" Margin="0,0,0,5"/>
-            <PasswordBox x:Name="txtPassword" 
-                         FontSize="14" Padding="5" Margin="0,0,0,15"/>
+                       Foreground="{StaticResource TextLight}" 
+                       FontSize="13" 
+                       FontWeight="SemiBold"
+                       FontFamily="Segoe UI"
+                       Margin="2,0,0,4"/>
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <PasswordBox x:Name="txtPassword" 
+                             Style="{StaticResource PasswordInputStyle}" 
+                             Grid.Column="0" 
+                             Margin="0"/>
+                <TextBox x:Name="txtPasswordVisible" 
+                         Style="{StaticResource InputStyle}" 
+                         Grid.Column="0" 
+                         Margin="0" 
+                         Visibility="Collapsed"/>
+                <CheckBox x:Name="chkMostrarPass" 
+                          Grid.Column="1" 
+                          Style="{StaticResource TogglePasswordStyle}" 
+                          VerticalAlignment="Center"
+                          Margin="-42,0,12,0" 
+                          Checked="chkMostrarPass_Checked" 
+                          Unchecked="chkMostrarPass_Unchecked"/>
+            </Grid>
 
+            <!-- Campo: Confirmar Contraseña -->
             <TextBlock Text="Confirmar Contraseña:" 
-                       Foreground="White" FontWeight="Medium" Margin="0,0,0,5"/>
-            <PasswordBox x:Name="txtConfirmPassword" 
-                         FontSize="14" Padding="5" Margin="0,0,0,25"/>
+                       Foreground="{StaticResource TextLight}" 
+                       FontSize="13" 
+                       FontWeight="SemiBold"
+                       FontFamily="Segoe UI"
+                       Margin="2,0,0,4"/>
+            <Grid Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <PasswordBox x:Name="txtConfirmPassword" 
+                             Style="{StaticResource PasswordInputStyle}" 
+                             Grid.Column="0" 
+                             Margin="0"/>
+                <TextBox x:Name="txtConfirmPasswordVisible" 
+                         Style="{StaticResource InputStyle}" 
+                         Grid.Column="0" 
+                         Margin="0" 
+                         Visibility="Collapsed"/>
+                <CheckBox x:Name="chkMostrarConfirmPass" 
+                          Grid.Column="1" 
+                          Style="{StaticResource TogglePasswordStyle}" 
+                          VerticalAlignment="Center"
+                          Margin="-42,0,12,0" 
+                          Checked="chkMostrarConfirmPass_Checked" 
+                          Unchecked="chkMostrarConfirmPass_Unchecked"/>
+            </Grid>
 
-            <Button x:Name="btnRegistrar" Content="Registrar" 
-                    FontSize="16" FontWeight="Bold" 
-                    Foreground="#FF333333" Background="White" 
-                    Padding="10" Margin="0,0,0,15" 
-                    BorderThickness="0" Cursor="Hand"
-                    Click="btnRegistrar_Click"/>
+            <!-- Botón Registrar -->
+            <Button x:Name="btnRegistrar" 
+                    Content="Registrar Usuario" 
+                    Click="btnRegistrar_Click" 
+                    Style="{StaticResource PrimaryButtonStyle}" 
+                    Margin="0,0,0,12"/>
 
-            <Button x:Name="btnVolver" Content="Volver al Login" 
-                    Background="Transparent" BorderThickness="0" 
-                    Foreground="#FF007BFF" HorizontalAlignment="Center" 
-                    Cursor="Hand"
-                    Click="btnVolver_Click"/>
+            <!-- Botón Volver al Login -->
+            <Button x:Name="btnVolver" 
+                    Content="← Volver al Login" 
+                    Click="btnVolver_Click" 
+                    Style="{StaticResource LinkButtonStyle}"/>
 
         </StackPanel>
-    </Grid>
+    </Border>
 </Window>

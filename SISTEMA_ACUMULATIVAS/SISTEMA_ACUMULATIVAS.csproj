@@ -219,6 +219,9 @@
     <Folder Include="Views\" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Images\LOGO.ACUMULATIVAS.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
     <Content Include="Images\LOGO_LA.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

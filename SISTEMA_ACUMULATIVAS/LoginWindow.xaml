@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS"
         mc:Ignorable="d"
         Title="Iniciar Sesión - Sistema de Acumulativas" 
-        Height="550" Width="850"  
+        Height="600" Width="900"  
         WindowStartupLocation="CenterScreen" 
         ResizeMode="NoResize"
         AllowsTransparency="True" 
@@ -16,29 +16,38 @@
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <Window.Resources>
-        <!-- ========== PALETA DE COLORES ========== -->
-        <SolidColorBrush x:Key="PrimaryBlack" Color="#213449"/>
-        <SolidColorBrush x:Key="SecondaryGray" Color="#555555"/>
-        <SolidColorBrush x:Key="AccentLightGray" Color="#F0F0F0"/>
-        <SolidColorBrush x:Key="TextLight" Color="White"/>
-        <SolidColorBrush x:Key="ControlBackground" Color="White"/>
-        <SolidColorBrush x:Key="BorderHighlight" Color="#CCCCCC"/>
-        <SolidColorBrush x:Key="ErrorRed" Color="#C0392B"/>
-        <SolidColorBrush x:Key="ErrorRedDark" Color="#922B21"/>
+        <!-- ========== COLORES ========== -->
+        <SolidColorBrush x:Key="PrimaryDark" Color="#1A2332"/>
+        <SolidColorBrush x:Key="PrimaryBlue" Color="#2C5F8A"/>
+        <SolidColorBrush x:Key="PrimaryLight" Color="#3A7BBF"/>
+        <SolidColorBrush x:Key="AccentGold" Color="#D4A843"/>
+        <SolidColorBrush x:Key="SecondaryGray" Color="#6B7A8F"/>
+        <SolidColorBrush x:Key="LightGray" Color="#F5F7FA"/>
+        <SolidColorBrush x:Key="WhiteColor" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextDark" Color="#1A2332"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="ErrorRed" Color="#E74C3C"/>
+        <SolidColorBrush x:Key="ErrorRedDark" Color="#C0392B"/>
 
-        <!-- ========== SOMBRA ========== -->
-        <DropShadowEffect x:Key="WindowShadow" Color="#000000" Direction="270" ShadowDepth="2" BlurRadius="15" Opacity="0.3"/>
+        <!-- ========== SOMBRAS ========== -->
+        <DropShadowEffect x:Key="WindowShadow" 
+                          Color="#000000" 
+                          Direction="270" 
+                          ShadowDepth="3" 
+                          BlurRadius="25" 
+                          Opacity="0.35"/>
 
         <!-- ========== ESTILO PARA TEXTBOX ========== -->
         <Style x:Key="InputStyle" TargetType="{x:Type TextBox}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="Margin" Value="0,8,0,20"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderHighlight}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
-            <Setter Property="Foreground" Value="{StaticResource PrimaryBlack}"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Margin" Value="0,6,0,18"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Background" Value="{StaticResource WhiteColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -47,18 +56,19 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="8">
+                                CornerRadius="10">
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Focusable="False"
                                           HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollBarVisibility="Hidden"/>
+                                          VerticalScrollBarVisibility="Hidden"
+                                          Margin="2,0"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource SecondaryGray}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlack}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
                                 <Setter TargetName="border" Property="BorderThickness" Value="2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -70,12 +80,14 @@
         <!-- ========== ESTILO PARA PASSWORDBOX ========== -->
         <Style x:Key="PasswordInputStyle" TargetType="{x:Type PasswordBox}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="Margin" Value="0,8,0,20"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderHighlight}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Margin" Value="0,6,0,18"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Background" Value="{StaticResource WhiteColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -84,18 +96,19 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="8">
+                                CornerRadius="10">
                             <ScrollViewer x:Name="PART_ContentHost" 
                                           Focusable="False" 
                                           HorizontalScrollBarVisibility="Hidden" 
-                                          VerticalScrollBarVisibility="Hidden"/>
+                                          VerticalScrollBarVisibility="Hidden"
+                                          Margin="2,0"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource SecondaryGray}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlack}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
                                 <Setter TargetName="border" Property="BorderThickness" Value="2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -104,32 +117,27 @@
             </Setter>
         </Style>
 
-        <!-- ========== ESTILO PARA TOGGLE PASSWORD (CheckBox) ========== -->
+        <!-- ========== ESTILO PARA BOTÓN DE MOSTRAR CONTRASEÑA ========== -->
         <Style x:Key="TogglePasswordStyle" TargetType="{x:Type CheckBox}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type CheckBox}">
-                        <Grid>
-                            <TextBlock x:Name="Icon" 
-                                       Text="👁"  
-                                       FontSize="18" 
-                                       Foreground="{StaticResource SecondaryGray}" 
-                                       VerticalAlignment="Center"/>
-                        </Grid>
+                        <TextBlock x:Name="Icon" 
+                                   Text="👁‍🗨"  
+                                   FontSize="20" 
+                                   Foreground="{StaticResource SecondaryGray}"/>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Icon" Property="Foreground" Value="{StaticResource PrimaryBlack}"/>
-                                <Setter TargetName="Icon" Property="Text" Value="🙈"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter TargetName="Icon" Property="Foreground" Value="{StaticResource SecondaryGray}"/>
-                                <Setter TargetName="Icon" Property="Text" Value="👁"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="{StaticResource PrimaryBlue}"/>
+                                <Setter TargetName="Icon" Property="Text" Value="👁️"
+/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="0.8"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="{StaticResource PrimaryLight}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -139,34 +147,32 @@
 
         <!-- ========== ESTILO PARA BOTÓN PRIMARIO ========== -->
         <Style x:Key="PrimaryButtonStyle" TargetType="{x:Type Button}">
-            <Setter Property="Background" Value="#4A90E2"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryBlue}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Padding" Value="20,14"/>
             <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="48"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Border x:Name="border" 
                                 Background="{TemplateBinding Background}" 
-                                CornerRadius="8" 
+                                CornerRadius="12" 
                                 BorderBrush="Transparent" 
-                                BorderThickness="1">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="White"/>
-                                <Setter TargetName="border" Property="Background" Value="#357ABD"/>
-                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#357ABD"/>
-                                <Setter Property="Opacity" Value="0.9"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryLight}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#2A5A8A"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryDark}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -180,9 +186,11 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{StaticResource SecondaryGray}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="0,20,0,0"/>
+            <Setter Property="Margin" Value="0,12,0,0"/>
             <Setter Property="Padding" Value="5"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -193,7 +201,7 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="{StaticResource PrimaryBlack}"/>
+                    <Setter Property="Foreground" Value="{StaticResource PrimaryBlue}"/>
                     <Setter Property="TextBlock.TextDecorations" Value="Underline"/>
                 </Trigger>
             </Style.Triggers>
@@ -202,7 +210,7 @@
         <!-- ========== ESTILO PARA EXIT LINK ========== -->
         <Style x:Key="ExitLinkStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource LinkButtonStyle}">
             <Setter Property="Foreground" Value="{StaticResource ErrorRed}"/>
-            <Setter Property="Margin" Value="0,10,0,0"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Foreground" Value="{StaticResource ErrorRedDark}"/>
@@ -210,179 +218,290 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <!-- ========== ESTILO PARA BOTÓN DE CIERRE ========== -->
+        <Style x:Key="CloseButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="20">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#E74C3C"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ========== ESTILO PARA CHECKBOX RECORDARME ========== -->
+        <Style x:Key="CustomCheckBoxStyle" TargetType="{x:Type CheckBox}">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryGray}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,-5,0,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <StackPanel Orientation="Horizontal">
+                            <Border x:Name="checkBorder"
+                                    Width="18" Height="18"
+                                    CornerRadius="4"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="2"
+                                    Background="White"
+                                    Margin="0,0,8,0">
+                                <TextBlock x:Name="checkMark"
+                                           Text="✓"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="checkBorder" Property="Background" Value="{StaticResource PrimaryBlue}"/>
+                                <Setter TargetName="checkBorder" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
+                                <Setter TargetName="checkMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="checkBorder" Property="BorderBrush" Value="{StaticResource PrimaryLight}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!-- ========== CONTENEDOR PRINCIPAL ========== -->
-    <Border CornerRadius="15" 
-            Background="{StaticResource AccentLightGray}" 
+    <Border CornerRadius="20" 
+            Background="{StaticResource LightGray}" 
             Effect="{StaticResource WindowShadow}"
             Margin="15">
 
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="350"/>
+                <ColumnDefinition Width="380"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- ===== PANEL IZQUIERDO ===== -->
             <Border Grid.Column="0" 
-                    Background="{StaticResource PrimaryBlack}" 
-                    CornerRadius="15,0,0,15">
+                    Background="{StaticResource PrimaryDark}" 
+                    CornerRadius="20,0,0,20">
 
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="30">
-                    <Border Width="140" Height="140" 
-                            CornerRadius="70" 
-                            Background="#FF2C3E7A"
-                            Margin="0,0,0,15">
-                        <Border BorderBrush="#FF4A90E2" 
-                                BorderThickness="3" 
-                                CornerRadius="70"
-                                Background="Transparent">
-                            <TextBlock Text="⚖️" 
-                                       FontSize="60" 
-                                       HorizontalAlignment="Center" 
-                                       VerticalAlignment="Center"/>
-                        </Border>
-                    </Border>
+                <Grid>
 
-                    <TextBlock Text="SISTEMA DE" 
-                               Foreground="#FF8A9AB5" 
-                               FontSize="14" 
-                               FontWeight="SemiBold"
+
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="35,50,35,50">
+
+                        <!-- Logo Escudo -->
+                        <Image Source="/Images/LOGO.ACUMULATIVAS.png" 
+                               Width="300" Height="300" 
+                               Stretch="Uniform"
+                               Margin="0,0,0,20"
                                HorizontalAlignment="Center"/>
 
-                    <TextBlock Text="ACUMULATIVAS" 
-                               Foreground="White" 
-                               FontSize="26" 
-                               FontWeight="Bold" 
-                               HorizontalAlignment="Center"
-                               FontFamily="Segoe UI"/>
+                        <TextBlock Text="SISTEMA DE" 
+                                   Foreground="#8899B0" 
+                                   FontSize="14" 
+                                   FontWeight="SemiBold"
+                                   FontFamily="Segoe UI"
+                                   HorizontalAlignment="Center"/>
 
-                    <TextBlock Text="NOTARÍA PÚBLICA No. 215" 
-                               Foreground="#FF4A90E2" 
-                               FontSize="13" 
-                               FontWeight="SemiBold"
-                               HorizontalAlignment="Center"
-                               Margin="0,8,0,0"/>
+                        <TextBlock Text="ACUMULATIVAS" 
+                                   Foreground="{StaticResource WhiteColor}" 
+                                   FontSize="28" 
+                                   FontWeight="Bold" 
+                                   HorizontalAlignment="Center"
+                                   FontFamily="Segoe UI"/>
 
-                    <Border Width="60" 
-                            Height="2" 
-                            Background="#FF4A90E2" 
-                            Margin="0,15,0,0"
-                            HorizontalAlignment="Center"/>
 
-                    <TextBlock Text="Sinaloa, México" 
-                               Foreground="#FF6B7A8F" 
-                               FontSize="11" 
-                               HorizontalAlignment="Center"
-                               Margin="0,15,0,0"/>
-                </StackPanel>
+                        <Border Width="60" 
+                                Height="2" 
+                                Background="{StaticResource AccentGold}" 
+                                Margin="0,15,0,0"
+                                HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Guasave, Sinaloa" 
+                                   Foreground="#66788F" 
+                                   FontSize="12" 
+                                   FontFamily="Segoe UI"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,15,0,0"/>
+
+
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- ===== PANEL DERECHO ===== -->
-            <StackPanel Grid.Column="1" 
-                        VerticalAlignment="Center" 
-                        Margin="45,30,45,30">
+            <Border Grid.Column="1" Background="Transparent">
+                <StackPanel VerticalAlignment="Center" Margin="50,40,50,40">
 
-                <Border Background="#FFE8EDF2" 
-                        CornerRadius="4" 
-                        Padding="12,6" 
-                        HorizontalAlignment="Left"
-                        Margin="0,0,0,15">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📊 " FontSize="13"/>
-                        <TextBlock Text="CONTROL DE UMAS Y AVISOS UIF" 
-                                   Foreground="{StaticResource PrimaryBlack}" 
-                                   FontSize="11" 
-                                   FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
+                    <!-- Etiqueta de control -->
+                    <Border Background="{StaticResource BorderColor}" 
+                            CornerRadius="6" 
+                            Padding="14,6" 
+                            HorizontalAlignment="Left"
+                            Margin="0,0,0,20">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📊 " FontSize="12"/>
+                            <TextBlock Text="CONTROL DE UMAS Y AVISOS UIF" 
+                                       Foreground="{StaticResource TextDark}" 
+                                       FontSize="11" 
+                                       FontWeight="SemiBold"
+                                       FontFamily="Segoe UI"/>
+                        </StackPanel>
+                    </Border>
 
-                <TextBlock Text="INICIAR SESIÓN" 
-                           Foreground="{StaticResource PrimaryBlack}"
-                           FontSize="28" 
-                           FontWeight="Bold" 
-                           Margin="0,0,0,5"/>
+                    <TextBlock Text="INICIAR SESIÓN" 
+                               Foreground="{StaticResource TextDark}"
+                               FontSize="30" 
+                               FontWeight="Bold" 
+                               FontFamily="Segoe UI"
+                               Margin="0,0,0,2"/>
 
-                <TextBlock Text="Ingresa tus credenciales de acceso" 
-                           Foreground="{StaticResource SecondaryGray}"
-                           FontSize="14"
-                           Margin="0,0,0,25"/>
+                    <TextBlock Text="Ingresa tus credenciales para acceder al sistema" 
+                               Foreground="{StaticResource SecondaryGray}"
+                               FontSize="14"
+                               FontFamily="Segoe UI"
+                               Margin="0,0,0,30"/>
 
-                <!-- Campo: Usuario -->
-                <TextBlock Text="Nombre de Usuario" 
-                           Foreground="{StaticResource SecondaryGray}" 
-                           Margin="2,0,0,0"
-                           FontWeight="SemiBold"/>
+                    <!-- Campo: Usuario -->
+                    <TextBlock Text="Nombre de Usuario" 
+                               Foreground="{StaticResource TextDark}" 
+                               Margin="2,0,0,4"
+                               FontWeight="SemiBold"
+                               FontSize="13"
+                               FontFamily="Segoe UI"/>
 
-                <TextBox x:Name="txtUsuario" 
-                         Style="{StaticResource InputStyle}" 
-                         TextChanged="txtUsuario_TextChanged"/>
-
-                <!-- Campo: Contraseña -->
-                <TextBlock Text="Contraseña" 
-                           Foreground="{StaticResource SecondaryGray}" 
-                           Margin="2,0,0,0"
-                           FontWeight="SemiBold"/>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <PasswordBox x:Name="txtPassword" 
-                                 Style="{StaticResource PasswordInputStyle}" 
-                                 Grid.Column="0" 
-                                 Margin="0,8,0,15" 
-                                 Padding="12,10" 
-                                 BorderThickness="1"/>
-
-                    <TextBox x:Name="txtPasswordVisible" 
+                    <TextBox x:Name="txtUsuario" 
                              Style="{StaticResource InputStyle}" 
-                             Grid.Column="0"
-                             Margin="0,8,0,15" 
-                             Padding="12,10" 
-                             Visibility="Collapsed"/>
+                             TextChanged="txtUsuario_TextChanged"
+                             FontFamily="Segoe UI"/>
 
-                    <CheckBox x:Name="chkMostrarPass" 
-                              Grid.Column="1" 
-                              VerticalAlignment="Center" 
-                              Margin="-40,0,10,7" 
-                              Style="{StaticResource TogglePasswordStyle}" 
-                              Checked="chkMostrarPass_Checked"
-                              Unchecked="chkMostrarPass_Unchecked"
-                              Cursor="Hand"/>
-                </Grid>
+                    <!-- Campo: Contraseña -->
+                    <TextBlock Text="Contraseña" 
+                               Foreground="{StaticResource TextDark}" 
+                               Margin="2,0,0,4"
+                               FontWeight="SemiBold"
+                               FontSize="13"
+                               FontFamily="Segoe UI"/>
 
-                <!-- Botón Iniciar Sesión -->
-                <Button x:Name="btnIniciarSesion"
-                        Content="Iniciar Sesión" 
-                        Click="btnIniciarSesion_Click" 
-                        IsDefault="True" 
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Margin="0,10,0,0" 
-                        Height="42"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                <!-- Enlaces -->
-                <Button Content="¿Necesitas una cuenta? Regístrate aquí." 
-                        Click="linkRegistro_Click"
-                        Style="{StaticResource LinkButtonStyle}"/>
+                        <PasswordBox x:Name="txtPassword" 
+                                     Style="{StaticResource PasswordInputStyle}" 
+                                     Grid.Column="0" 
+                                     Margin="0,6,0,18"
+                                     FontFamily="Segoe UI"/>
 
-                <Button Content="Salir de la Aplicación" 
-                        Click="btnSalir_Click"
-                        Style="{StaticResource ExitLinkStyle}"/>
+                        <TextBox x:Name="txtPasswordVisible" 
+                                 Style="{StaticResource InputStyle}" 
+                                 Grid.Column="0"
+                                 Margin="0,6,0,18" 
+                                 Visibility="Collapsed"
+                                 FontFamily="Segoe UI"/>
 
-                <!-- Mensaje de Error -->
-                <TextBlock x:Name="txtErrorMessage" 
-                           Foreground="{StaticResource ErrorRed}" 
-                           Margin="0,10,0,0" 
-                           TextAlignment="Center" 
-                           TextWrapping="Wrap"
-                           FontSize="13"
-                           FontWeight="SemiBold"
-                           Visibility="Collapsed"/>
-            </StackPanel>
+                        <CheckBox x:Name="chkMostrarPass" 
+                                  Grid.Column="1" 
+                                  VerticalAlignment="Center" 
+                                  Margin="-45,0,15,10" 
+                                  Style="{StaticResource TogglePasswordStyle}" 
+                                  Checked="chkMostrarPass_Checked"
+                                  Unchecked="chkMostrarPass_Unchecked"
+                                  Cursor="Hand">
+                            <CheckBox.ToolTip>
+                                <TextBlock Text="Mostrar/Ocultar contraseña" FontFamily="Segoe UI"/>
+                            </CheckBox.ToolTip>
+                        </CheckBox>
+                    </Grid>
+
+                    <!-- Botón Iniciar Sesión -->
+                    <Button x:Name="btnIniciarSesion"
+                            Content="Iniciar Sesión" 
+                            Click="btnIniciarSesion_Click" 
+                            IsDefault="True" 
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Margin="0,5,0,0"/>
+
+                    <!-- Separador -->
+                    <StackPanel Orientation="Horizontal" 
+                                HorizontalAlignment="Center"
+                                Margin="0,20,0,10">
+                        <Border Width="60" Height="1" Background="{StaticResource BorderColor}" VerticalAlignment="Center"/>
+                        <TextBlock Text="o" 
+                                   Foreground="{StaticResource SecondaryGray}" 
+                                   FontSize="12"
+                                   Margin="15,0"
+                                   FontFamily="Segoe UI"/>
+                        <Border Width="60" Height="1" Background="{StaticResource BorderColor}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Enlaces -->
+                    <Button Content="📝 ¿Necesitas una cuenta? Regístrate aquí." 
+                            Click="linkRegistro_Click"
+                            Style="{StaticResource LinkButtonStyle}"/>
+
+                    <Button Content="🚪 Salir de la Aplicación" 
+                            Click="btnSalir_Click"
+                            Style="{StaticResource ExitLinkStyle}"/>
+
+                    <!-- Mensaje de Error -->
+                    <Border x:Name="errorBorder"
+                            Background="#FDEDEC"
+                            CornerRadius="8"
+                            Padding="12,10"
+                            Margin="0,15,0,0"
+                            Visibility="Collapsed">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" 
+                                       Text="⚠️" 
+                                       FontSize="16"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"/>
+                            <TextBlock x:Name="txtErrorMessage" 
+                                       Grid.Column="1"
+                                       Foreground="{StaticResource ErrorRed}" 
+                                       TextAlignment="Left" 
+                                       TextWrapping="Wrap"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       FontFamily="Segoe UI"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
         </Grid>
     </Border>
 </Window>

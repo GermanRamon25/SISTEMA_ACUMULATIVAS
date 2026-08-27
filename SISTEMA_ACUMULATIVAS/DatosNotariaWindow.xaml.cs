@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Input;
 using SISTEMA_ACUMULATIVAS.Conexion;
 using SISTEMA_ACUMULATIVAS.Models;
 
@@ -10,6 +11,15 @@ namespace SISTEMA_ACUMULATIVAS
         {
             InitializeComponent();
             CargarValoresSiExisten();
+            txtNombreTitular.Focus();
+        }
+
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == MouseButtonState.Pressed)
+            {
+                this.DragMove();
+            }
         }
 
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
@@ -17,7 +27,6 @@ namespace SISTEMA_ACUMULATIVAS
             if (string.IsNullOrWhiteSpace(txtNombreTitular.Text) ||
                 string.IsNullOrWhiteSpace(txtNumeroNotaria.Text))
             {
-                // Corregido a MessageBoxButton y MessageBoxImage de WPF
                 MessageBox.Show("Por favor complete los campos obligatorios.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -35,7 +44,6 @@ namespace SISTEMA_ACUMULATIVAS
             if (config.GuardarOActualizarNotaria(model))
             {
                 MessageBox.Show("Datos de la notaría sincronizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-             
                 this.Close();
             }
             else

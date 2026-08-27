@@ -1,8 +1,10 @@
-﻿using SISTEMA_ACUMULATIVAS.Conexion;
-using System;
+﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using SISTEMA_ACUMULATIVAS.Conexion;
 
 namespace SISTEMA_ACUMULATIVAS
 {
@@ -16,12 +18,11 @@ namespace SISTEMA_ACUMULATIVAS
             InitializeComponent();
             _conexion = new ClsConexion();
 
-            // Foco en el campo de usuario al abrir
             this.Loaded += (s, e) => txtUsuario.Focus();
         }
 
         // ============================================================
-        //              EVENTOS DE ARRASTRE DE VENTANA
+        //              EVENTO DE ARRASTRE DE VENTANA
         // ============================================================
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -33,7 +34,7 @@ namespace SISTEMA_ACUMULATIVAS
         }
 
         // ============================================================
-        //              EVENTOS DE TOGGLE PASSWORD
+        //              EVENTOS MOSTRAR / OCULTAR CONTRASEÑA
         // ============================================================
 
         private void chkMostrarPass_Checked(object sender, RoutedEventArgs e)
@@ -55,25 +56,31 @@ namespace SISTEMA_ACUMULATIVAS
             txtPassword.Focus();
         }
 
-        private void txtUsuario_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        // ============================================================
+        //              EVENTOS DE INPUT
+        // ============================================================
+
+        private void txtUsuario_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (txtErrorMessage.Visibility == Visibility.Visible)
+            if (errorBorder.Visibility == Visibility.Visible)
             {
-                txtErrorMessage.Visibility = Visibility.Collapsed;
+                errorBorder.Visibility = Visibility.Collapsed;
             }
         }
 
         // ============================================================
-        //              EVENTOS DE NAVEGACIÓN
+        //              EVENTOS DE NAVEGACIÓN Y CIERRE
         // ============================================================
 
         private void linkRegistro_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                txtErrorMessage.Visibility = Visibility.Collapsed;
-                RegistroWindow registroVentana = new RegistroWindow();
-                registroVentana.Owner = this;
+                errorBorder.Visibility = Visibility.Collapsed;
+                RegistroWindow registroVentana = new RegistroWindow
+                {
+                    Owner = this
+                };
                 registroVentana.ShowDialog();
             }
             catch (Exception ex)
@@ -94,7 +101,8 @@ namespace SISTEMA_ACUMULATIVAS
 
             if (result == MessageBoxResult.Yes)
             {
-                Application.Current.Shutdown();
+                this.DialogResult = false;
+                this.Close();
             }
         }
 
@@ -115,32 +123,27 @@ namespace SISTEMA_ACUMULATIVAS
 
             try
             {
-                // Verificar conexión a la BD
                 if (!_conexion.TestConnection())
                 {
                     MostrarError("No se pudo conectar a la base de datos. Verifica tu conexión SQL.");
                     return;
                 }
 
-                // Validar usuario
                 if (ValidarUsuario(usuario, password))
                 {
                     EjecutarMantenimientoDiario();
 
-                    // Comprobar si existen datos de la notaría configurados
                     ClsConfiguracion config = new ClsConfiguracion();
                     if (!config.ExisteConfiguracionNotaria())
                     {
-                        DatosNotariaWindow notariaWin = new DatosNotariaWindow();
-                        notariaWin.Owner = this;
+                        DatosNotariaWindow notariaWin = new DatosNotariaWindow
+                        {
+                            Owner = this
+                        };
                         notariaWin.ShowDialog();
                     }
 
-                    // Abrir MainWindow
-                    MainWindow main = new MainWindow();
-                    main.Show();
-
-                    // Cerrar Login
+                    this.DialogResult = true;
                     this.Close();
                 }
                 else
@@ -163,7 +166,7 @@ namespace SISTEMA_ACUMULATIVAS
         }
 
         // ============================================================
-        //              LÓGICA DE VALIDACIÓN
+        //              VALIDACIÓN EN BASE DE DATOS
         // ============================================================
 
         private bool ValidarUsuario(string usuario, string password)
@@ -202,7 +205,7 @@ namespace SISTEMA_ACUMULATIVAS
         }
 
         // ============================================================
-        //              MANTENIMIENTO DIARIO (6 MESES)
+        //              MANTENIMIENTO DIARIO (ACUMULADOS)
         // ============================================================
 
         private void EjecutarMantenimientoDiario()
@@ -213,7 +216,7 @@ namespace SISTEMA_ACUMULATIVAS
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_RecalcularAcumuladosDiarios", conn))
                     {
-                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.CommandType = CommandType.StoredProcedure;
                         cmd.CommandTimeout = 120;
                         cmd.ExecuteNonQuery();
                     }
@@ -226,13 +229,13 @@ namespace SISTEMA_ACUMULATIVAS
         }
 
         // ============================================================
-        //              MÉTODOS DE AYUDA (UI)
+        //              UI HELPERS
         // ============================================================
 
         private void MostrarError(string mensaje)
         {
             txtErrorMessage.Text = mensaje;
-            txtErrorMessage.Visibility = Visibility.Visible;
+            errorBorder.Visibility = Visibility.Visible;
         }
     }
 }
