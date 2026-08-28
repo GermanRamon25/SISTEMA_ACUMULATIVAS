@@ -122,5 +122,10 @@ namespace SISTEMA_ACUMULATIVAS
                 Application.Current.Shutdown();
             }
         }
+
+        private void ClienteView_Loaded(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

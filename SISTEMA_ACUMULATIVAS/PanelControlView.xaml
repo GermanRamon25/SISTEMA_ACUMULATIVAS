@@ -8,7 +8,7 @@
              Background="White" Loaded="UserControl_Loaded">
 
     <Grid Margin="20">
-        <TextBlock Text="AJUSTES DEL SISTEMA Y RESPONSABILIDAD LEGAL" FontSize="24" FontWeight="Bold" Foreground="#FF333333" Margin="0,0,0,20"/>
+        <TextBlock Text="AJUSTES DEL SISTEMA Y RESPONSABILIDAD LEGAL" FontSize="24" FontWeight="Bold" Foreground="#D4A843" Margin="0,0,0,20"/>
 
         <TabControl Margin="0,40,0,0">
 
@@ -76,7 +76,7 @@
                                       VerticalAlignment="Bottom" Margin="0,0,15,10" FontWeight="SemiBold" Foreground="#DC2626"/>
 
                             <Button x:Name="btnGuardarOperacion" Grid.Column="2" Content="➕ Guardar Operación" 
-                                    Background="#0F172A" Foreground="White" FontWeight="Bold" Padding="15,8" 
+                                    Background="#2563EB" Foreground="White" FontWeight="Bold" Padding="15,8" 
                                     VerticalAlignment="Bottom" BorderThickness="0" Cursor="Hand" Click="btnGuardarOperacion_Click"/>
                         </Grid>
                     </Border>
@@ -119,9 +119,10 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <Button x:Name="btnRefrescarPapelera" Content="🔄 Refrescar Lista" Click="btnRefrescarPapelera_Click" Margin="0,0,10,0"/>
+                        <Button x:Name="btnRefrescarPapelera" Content="🔄 Refrescar Lista" Click="btnRefrescarPapelera_Click" Margin="0,0,10,0"
+                           Background="#FF28A745" Foreground="White" FontWeight="Bold" Padding="10,5"/>
                         <Button x:Name="btnRestaurar" Content="♻️ Restaurar Cliente Seleccionado" 
-                                Background="#FF28A745" Foreground="White" FontWeight="Bold" Padding="10,5"
+                                Background="#2563EB" Foreground="White" FontWeight="Bold" Padding="10,5"
                                 BorderThickness="0" Click="btnRestaurar_Click"/>
                     </StackPanel>
 
@@ -145,7 +146,7 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <Button Content="🔄 Actualizar Bitácora" Click="btnActualizarLogs_Click" HorizontalAlignment="Left" Padding="12,6" Background="#0F172A" Foreground="White" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+                        <Button Content="🔄 Actualizar Bitácora" Click="btnActualizarLogs_Click" HorizontalAlignment="Left" Padding="12,6" Background="#2563EB" Foreground="White" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
                     </StackPanel>
 
                     <DataGrid Grid.Row="1" x:Name="dgLogs" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#E2E8F0" RowHeight="38">

@@ -378,7 +378,7 @@
                                    HorizontalAlignment="Center"/>
 
                         <!-- ACUMULATIVAS -->
-                        <TextBlock Text="ACUMULATIVAS"
+                        <TextBlock Text="ACUMULATIVAS AG"
                                    Foreground="{StaticResource WhiteColor}"
                                    FontSize="28"
                                    FontWeight="Bold"

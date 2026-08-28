@@ -301,7 +301,7 @@
                     <TextBlock Text="Detalles del Cliente" 
                                FontSize="22" 
                                FontWeight="ExtraBold" 
-                               Foreground="#FF1B3A57" 
+                               Foreground="#D4A843" 
                                Margin="0,0,0,30"/>
 
                     <!-- ID Cliente -->

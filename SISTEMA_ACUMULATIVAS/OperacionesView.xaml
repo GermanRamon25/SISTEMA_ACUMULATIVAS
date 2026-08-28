@@ -31,10 +31,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="#FF007BFF"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#1A2332"/>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="#FF007BFF"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#1A2332"/>
                                 <Setter TargetName="border" Property="BorderThickness" Value="2"/>
                             </Trigger>
                             <Trigger Property="IsReadOnly" Value="True">
@@ -60,10 +60,10 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ItemBorder" Property="Background" Value="#EBF3FF"/>
-                                <Setter Property="Foreground" Value="#007BFF"/>
+                                <Setter Property="Foreground" Value="#1A2332"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="#007BFF"/>
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#1A2332"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -239,7 +239,7 @@
         <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="15">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Operaciones Registradas" 
-                           FontSize="22" FontWeight="ExtraBold" Foreground="#FF007BFF" Margin="0,0,0,15"/>
+                           FontSize="22" FontWeight="ExtraBold" Foreground="#D4A843" Margin="0,0,0,15"/>
 
                 <DataGrid x:Name="dgOperaciones" AutoGenerateColumns="False" 
                           IsReadOnly="True" SelectionMode="Single"
@@ -248,7 +248,7 @@
                           BorderBrush="#FFDDDDDD"
                           RowHeight="30">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Folio" Binding="{Binding FolioEscritura}" Width="100"/>
+                        <DataGridTextColumn Header="No.Escritura" Binding="{Binding FolioEscritura}" Width="100"/>
                         <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNombre}" Width="*"/>
                         <DataGridTextColumn Header="Tipo Operación" Binding="{Binding TipoOperacion}" Width="160"/>
                         <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat='C'}" Width="120"/>
@@ -266,7 +266,7 @@
                 <StackPanel x:Name="FormularioOperacion">
                     <TextBlock Text="Registrar Operación" 
                                FontSize="22" FontWeight="ExtraBold" 
-                               Foreground="#FF007BFF" Margin="0,0,0,30"/>
+                               Foreground="#D4A843" Margin="0,0,0,30"/>
 
                     <!-- BÚSQUEDA RÁPIDA DE CLIENTE CON AUTOCOMPLETADO -->
                     <TextBlock Text="Buscar Cliente (Nombre o RFC):" FontWeight="Medium" Margin="0,0,0,5"/>
