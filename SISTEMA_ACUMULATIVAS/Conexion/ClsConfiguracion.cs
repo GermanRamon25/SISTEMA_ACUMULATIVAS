@@ -68,16 +68,17 @@ namespace SISTEMA_ACUMULATIVAS.Conexion
 
         #region MÉTODOS NOTARÍA (Tabla DatosNotaria)
 
-        public bool ExisteConfiguracionNotaria()
+        public bool ExisteConfiguracionNotaria(int usuarioId)
         {
             try
             {
                 ClsConexion conexion = new ClsConexion();
                 using (SqlConnection con = conexion.GetConnection())
                 {
-                    string query = "SELECT COUNT(*) FROM DatosNotaria";
+                    string query = "SELECT COUNT(*) FROM DatosNotaria WHERE UsuarioId = @UsuarioId";
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
+                        cmd.Parameters.AddWithValue("@UsuarioId", usuarioId);
                         int count = Convert.ToInt32(cmd.ExecuteScalar());
                         return count > 0;
                     }
@@ -90,16 +91,22 @@ namespace SISTEMA_ACUMULATIVAS.Conexion
             }
         }
 
-        public NotariaModel CargarDatosNotaria()
+        public NotariaModel CargarDatosNotaria(int usuarioId)
         {
             try
             {
                 ClsConexion conexion = new ClsConexion();
                 using (SqlConnection con = conexion.GetConnection())
                 {
-                    string query = "SELECT TOP 1 Id, NombreTitular, NumeroNotaria, DireccionCompleta, Telefono, EmailContacto FROM DatosNotaria ORDER BY Id DESC";
+                    string query = @"SELECT TOP 1 Id, NombreTitular, NumeroNotaria, DireccionCompleta, Telefono, EmailContacto 
+                                     FROM DatosNotaria 
+                                     WHERE UsuarioId = @UsuarioId 
+                                     ORDER BY Id DESC";
+
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
+                        cmd.Parameters.AddWithValue("@UsuarioId", usuarioId);
+
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
@@ -126,7 +133,7 @@ namespace SISTEMA_ACUMULATIVAS.Conexion
             return null;
         }
 
-        public bool GuardarOActualizarNotaria(NotariaModel notaria)
+        public bool GuardarOActualizarNotaria(NotariaModel notaria, int usuarioId)
         {
             try
             {
@@ -134,21 +141,26 @@ namespace SISTEMA_ACUMULATIVAS.Conexion
                 using (SqlConnection con = conexion.GetConnection())
                 {
                     string query;
-                    if (ExisteConfiguracionNotaria())
+                    if (ExisteConfiguracionNotaria(usuarioId))
                     {
                         query = @"UPDATE DatosNotaria 
-                                  SET NombreTitular = @Nombre, NumeroNotaria = @Numero, 
-                                      DireccionCompleta = @Direccion, Telefono = @Tel, 
-                                      EmailContacto = @Email, FechaActualizacion = GETDATE()";
+                                  SET NombreTitular = @Nombre, 
+                                      NumeroNotaria = @Numero, 
+                                      DireccionCompleta = @Direccion, 
+                                      Telefono = @Tel, 
+                                      EmailContacto = @Email, 
+                                      FechaActualizacion = GETDATE()
+                                  WHERE UsuarioId = @UsuarioId";
                     }
                     else
                     {
-                        query = @"INSERT INTO DatosNotaria (NombreTitular, NumeroNotaria, DireccionCompleta, Telefono, EmailContacto) 
-                                  VALUES (@Nombre, @Numero, @Direccion, @Tel, @Email)";
+                        query = @"INSERT INTO DatosNotaria (UsuarioId, NombreTitular, NumeroNotaria, DireccionCompleta, Telefono, EmailContacto) 
+                                  VALUES (@UsuarioId, @Nombre, @Numero, @Direccion, @Tel, @Email)";
                     }
 
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
+                        cmd.Parameters.AddWithValue("@UsuarioId", usuarioId);
                         cmd.Parameters.AddWithValue("@Nombre", notaria.NombreTitular ?? "");
                         cmd.Parameters.AddWithValue("@Numero", notaria.NumeroNotaria ?? "");
                         cmd.Parameters.AddWithValue("@Direccion", notaria.DireccionCompleta ?? "");

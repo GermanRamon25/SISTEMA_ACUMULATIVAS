@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SISTEMA_ACUMULATIVAS"
         mc:Ignorable="d"
         Title="Configuración de Datos de la Notaría" 
-        Height="676" Width="520"
+        Height="680" Width="520"
         WindowStartupLocation="CenterScreen" 
         WindowStyle="None"
         AllowsTransparency="True" 

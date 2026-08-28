@@ -22,6 +22,7 @@ namespace SISTEMA_ACUMULATIVAS
         {
             InitializeComponent();
             CargarBannerNotaria();
+            CargarDatosNotariaBanner();
             CargarDatosSesion();
         }
 
@@ -47,10 +48,17 @@ namespace SISTEMA_ACUMULATIVAS
         private void CargarBannerNotaria()
         {
             ClsConfiguracion config = new ClsConfiguracion();
-            var notaria = config.CargarDatosNotaria();
-            if (notaria != null && txtBannerNotaria != null)
+
+            // Pasamos el ID del usuario en sesión actual
+            var notaria = config.CargarDatosNotaria(ClsSesion.UsuarioId);
+
+            if (notaria != null)
             {
-                txtBannerNotaria.Text = $"NOTARÍA PÚBLICA NO. {notaria.NumeroNotaria} - {notaria.NombreTitular.ToUpper()}";
+                txtBannerNotaria.Text = $"NOTARÍA PÚBLICA NO. {notaria.NumeroNotaria} - {notaria.NombreTitular}";
+            }
+            else
+            {
+                txtBannerNotaria.Text = "NOTARÍA PÚBLICA (SIN CONFIGURAR)";
             }
         }
 
@@ -93,6 +101,61 @@ namespace SISTEMA_ACUMULATIVAS
             {
                 // Si cerró la ventana de Login sin entrar (canceló), apagamos la app por completo
                 Application.Current.Shutdown();
+            }
+        }
+
+        private void CargarDatosNotariaBanner()
+        {
+            try
+            {
+                Conexion.ClsConexion conexionDb = new Conexion.ClsConexion();
+
+                using (var con = conexionDb.GetConnection())
+                {
+                    if (con.State != System.Data.ConnectionState.Open)
+                        con.Open();
+
+                    // Filtramos por el UsuarioId de la sesión
+                    string query = "SELECT NumeroNotaria, Municipio FROM DatosNotaria WHERE UsuarioId = @UsuarioId";
+
+                    using (var cmd = new System.Data.SqlClient.SqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@UsuarioId", Conexion.ClsSesion.UsuarioId);
+
+                        using (var dr = cmd.ExecuteReader())
+                        {
+                            if (dr.Read())
+                            {
+                                string num = dr["NumeroNotaria"] != DBNull.Value ? dr["NumeroNotaria"].ToString() : "";
+                                string municipio = dr["Municipio"] != DBNull.Value ? dr["Municipio"].ToString() : "";
+
+                                txtBannerNotaria.Text = !string.IsNullOrWhiteSpace(num)
+                                    ? $"NOTARÍA PÚBLICA NO. {num}" + (!string.IsNullOrWhiteSpace(municipio) ? $" - {municipio.ToUpper()}" : "")
+                                    : "NOTARÍA PÚBLICA";
+                            }
+                            else
+                            {
+                                txtBannerNotaria.Text = "NOTARÍA PÚBLICA (SIN CONFIGURAR)";
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                txtBannerNotaria.Text = "NOTARÍA PÚBLICA";
+            }
+        }
+
+        private void btnConfiguracionNotaria_Click(object sender, RoutedEventArgs e)
+        {
+            DatosNotariaWindow ventanaNotaria = new DatosNotariaWindow();
+            ventanaNotaria.Owner = this;
+
+            // Abre la ventana modal y actualiza el encabezado al cerrar
+            if (ventanaNotaria.ShowDialog() == true)
+            {
+                CargarDatosNotariaBanner();
             }
         }
     }

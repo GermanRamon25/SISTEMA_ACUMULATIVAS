@@ -134,7 +134,9 @@ namespace SISTEMA_ACUMULATIVAS
                     EjecutarMantenimientoDiario();
 
                     ClsConfiguracion config = new ClsConfiguracion();
-                    if (!config.ExisteConfiguracionNotaria())
+
+                    // Se verifica si el usuario autenticado ya registró los datos de su notaría
+                    if (!config.ExisteConfiguracionNotaria(ClsSesion.UsuarioId))
                     {
                         DatosNotariaWindow notariaWin = new DatosNotariaWindow
                         {
@@ -194,6 +196,7 @@ namespace SISTEMA_ACUMULATIVAS
 
                             if (ClsSeguridad.VerificarPasswordHash(password, hashGuardado, saltGuardado))
                             {
+                                // Registra al usuario en la sesión global
                                 ClsSesion.IniciarSesion(idUsuario, nombreUsuario, rolUsuario);
                                 return true;
                             }
@@ -238,4 +241,4 @@ namespace SISTEMA_ACUMULATIVAS
             errorBorder.Visibility = Visibility.Visible;
         }
     }
-}
+} 

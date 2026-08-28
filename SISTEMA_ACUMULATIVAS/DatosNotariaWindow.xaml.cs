@@ -41,9 +41,14 @@ namespace SISTEMA_ACUMULATIVAS
             };
 
             ClsConfiguracion config = new ClsConfiguracion();
-            if (config.GuardarOActualizarNotaria(model))
+
+            // Pasamos el UsuarioId de la sesión actual
+            if (config.GuardarOActualizarNotaria(model, ClsSesion.UsuarioId))
             {
                 MessageBox.Show("Datos de la notaría sincronizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Asignamos true para notificar a MainWindow que actualice el banner
+                this.DialogResult = true;
                 this.Close();
             }
             else
@@ -55,7 +60,10 @@ namespace SISTEMA_ACUMULATIVAS
         private void CargarValoresSiExisten()
         {
             ClsConfiguracion config = new ClsConfiguracion();
-            var notaria = config.CargarDatosNotaria();
+
+            // Consultamos usando el UsuarioId del usuario conectado
+            var notaria = config.CargarDatosNotaria(ClsSesion.UsuarioId);
+
             if (notaria != null)
             {
                 txtNombreTitular.Text = notaria.NombreTitular;
@@ -63,6 +71,15 @@ namespace SISTEMA_ACUMULATIVAS
                 txtDireccion.Text = notaria.DireccionCompleta;
                 txtTelefono.Text = notaria.Telefono;
                 txtEmail.Text = notaria.EmailContacto;
+            }
+            else
+            {
+                // Si es un usuario nuevo sin datos previos, dejamos los campos vacíos
+                txtNombreTitular.Clear();
+                txtNumeroNotaria.Clear();
+                txtDireccion.Clear();
+                txtTelefono.Clear();
+                txtEmail.Clear();
             }
         }
 

@@ -17,7 +17,7 @@
             <RowDefinition Height="35"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#FF1B3A57">
+        <Border Grid.Row="0" Background="#1A2332">
             <Border.Effect>
                 <DropShadowEffect ShadowDepth="2" Direction="270" Opacity="0.3" BlurRadius="5"/>
             </Border.Effect>
@@ -29,23 +29,30 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="⚖️" Foreground="#FFD4AF37" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <!-- Imagen del Logo -->
+                    <Image Source="/Images/LOGO.ACUMULATIVAS.png" 
+                      Width="38" 
+                      Height="38" 
+                      Margin="0,0,12,0" 
+                      VerticalAlignment="Center" 
+                      RenderOptions.BitmapScalingMode="HighQuality"/>
 
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="SISTEMA DE ACUMULATIVAS" 
-                                   Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                        Foreground="White" FontSize="18" FontWeight="SemiBold"/>
 
                         <TextBlock x:Name="txtBannerNotaria" 
                            Text="NOTARÍA PÚBLICA" 
-                           FontSize="16" 
+                           FontSize="14" 
                            FontWeight="Bold" 
-                           Foreground="White" 
+                           Foreground="#FFD4AF37" 
                            VerticalAlignment="Center"/>
                     </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#33FFFFFF" CornerRadius="15" Padding="15,5" Margin="0,0,15,0">
+                    <!-- Usuario Actual -->
+                    <Border Background="#33FFFFFF" CornerRadius="15" Padding="15,5" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="👤" Foreground="White" Margin="0,0,8,0"/>
                             <TextBlock x:Name="lblUsuarioActual" Text="Cargando..." 
@@ -53,6 +60,20 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Botón Configuración de Notaría -->
+                    <Button x:Name="btnConfiguracionNotaria" Content="⚙️ Datos Notaría"
+                            Background="#FF2B5278" Foreground="White"
+                            BorderBrush="#FF4A7A9F" BorderThickness="1"
+                            Padding="12,5" Margin="0,0,10,0" Cursor="Hand"
+                            Click="btnConfiguracionNotaria_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+
+                    <!-- Botón Cerrar Sesión -->
                     <Button x:Name="btnCerrarSesion" Content="Cerrar Sesión"
                             Background="#FF343A40" Foreground="White"
                             BorderBrush="#FF495057" BorderThickness="1"
@@ -116,14 +137,13 @@
                 <views:AvisoUifView />
             </TabItem>
 
-            <!-- CAMBIO: Se eliminó Visibility="Collapsed" para que siempre esté visible -->
             <TabItem x:Name="tabPanelControl" Header="⚙️ Ajustes Generales">
                 <views:PanelControlView />
             </TabItem>
 
         </TabControl>
 
-        <Border Grid.Row="2" Background="#FF1B3A57">
+        <Border Grid.Row="2" Background="#1A2332">
             <Grid Margin="15,0">
                 <TextBlock x:Name="lblConexion" Text="● Sistema Conectado y Seguro" 
                            Foreground="#FF28A745" FontSize="12" FontWeight="Bold" 
