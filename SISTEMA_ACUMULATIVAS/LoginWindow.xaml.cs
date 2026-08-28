@@ -57,14 +57,38 @@ namespace SISTEMA_ACUMULATIVAS
         }
 
         // ============================================================
-        //              EVENTOS DE INPUT
+        //              EVENTOS DE INPUT Y LIMPIEZA DE ERROR
         // ============================================================
 
         private void txtUsuario_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (errorBorder.Visibility == Visibility.Visible)
+            OcultarError();
+        }
+
+        private void txtPassword_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            OcultarError();
+        }
+
+        private void txtPasswordVisible_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            OcultarError();
+        }
+
+        private void OcultarError()
+        {
+            if (errorBorder != null && errorBorder.Visibility == Visibility.Visible)
             {
                 errorBorder.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // Permitir presionar Enter en los campos para iniciar sesión
+        private void Input_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                btnIniciarSesion_Click(btnIniciarSesion, new RoutedEventArgs());
             }
         }
 
@@ -76,12 +100,18 @@ namespace SISTEMA_ACUMULATIVAS
         {
             try
             {
-                errorBorder.Visibility = Visibility.Collapsed;
+                OcultarError();
                 RegistroWindow registroVentana = new RegistroWindow
                 {
                     Owner = this
                 };
                 registroVentana.ShowDialog();
+
+                // Al volver del registro, limpia los campos y enfoca el usuario
+                txtUsuario.Clear();
+                txtPassword.Clear();
+                txtPasswordVisible.Clear();
+                txtUsuario.Focus();
             }
             catch (Exception ex)
             {
@@ -115,51 +145,52 @@ namespace SISTEMA_ACUMULATIVAS
             string usuario = txtUsuario.Text.Trim();
             string password = _passwordVisible ? txtPasswordVisible.Text : txtPassword.Password;
 
-            if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
+            // Validación de campos vacíos
+            if (string.IsNullOrWhiteSpace(usuario) && string.IsNullOrWhiteSpace(password))
             {
-                MostrarError("Por favor, ingresa usuario y contraseña.");
+                MostrarError("Por favor, ingresa tu usuario y contraseña.");
+                txtUsuario.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(usuario))
+            {
+                MostrarError("Por favor, ingresa tu nombre de usuario.");
+                txtUsuario.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                MostrarError("Por favor, ingresa tu contraseña.");
+                if (_passwordVisible) txtPasswordVisible.Focus(); else txtPassword.Focus();
                 return;
             }
 
             try
             {
+                // Validación de conexión
                 if (!_conexion.TestConnection())
                 {
                     MostrarError("No se pudo conectar a la base de datos. Verifica tu conexión SQL.");
                     return;
                 }
 
+                // Validación de credenciales
                 if (ValidarUsuario(usuario, password))
                 {
+                    // Cargar los datos de notaría propios de este usuario en sesión
+                    CargarDatosNotariaUsuario();
+
                     EjecutarMantenimientoDiario();
-
-                    ClsConfiguracion config = new ClsConfiguracion();
-
-                    // Se verifica si el usuario autenticado ya registró los datos de su notaría
-                    if (!config.ExisteConfiguracionNotaria(ClsSesion.UsuarioId))
-                    {
-                        DatosNotariaWindow notariaWin = new DatosNotariaWindow
-                        {
-                            Owner = this
-                        };
-                        notariaWin.ShowDialog();
-                    }
 
                     this.DialogResult = true;
                     this.Close();
                 }
-                else
-                {
-                    MostrarError("Usuario o contraseña incorrectos.");
-                    txtPassword.Clear();
-                    txtPasswordVisible.Clear();
-                    txtUsuario.Focus();
-                    txtUsuario.SelectAll();
-                }
             }
             catch (SqlException sqlEx)
             {
-                MostrarError($"Error de base de datos: {sqlEx.Message}");
+                MostrarError($"Error de base de datos ({sqlEx.Number}): {sqlEx.Message}");
             }
             catch (Exception ex)
             {
@@ -175,10 +206,13 @@ namespace SISTEMA_ACUMULATIVAS
         {
             using (SqlConnection conn = _conexion.GetConnection())
             {
+                if (conn.State != ConnectionState.Open) conn.Open();
+
+                // Consultamos el usuario independientemente del estado para dar retroalimentación clara
                 string query = @"
-                    SELECT Id, PasswordHash, PasswordSalt, Rol, NombreCompleto 
+                    SELECT Id, PasswordHash, PasswordSalt, Rol, NombreCompleto, Activo 
                     FROM Usuarios 
-                    WHERE Usuario = @usuario AND Activo = 1";
+                    WHERE Usuario = @usuario";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -188,6 +222,13 @@ namespace SISTEMA_ACUMULATIVAS
                     {
                         if (reader.Read())
                         {
+                            bool activo = (bool)reader["Activo"];
+                            if (!activo)
+                            {
+                                MostrarError("Esta cuenta de usuario se encuentra desactivada.");
+                                return false;
+                            }
+
                             int idUsuario = (int)reader["Id"];
                             byte[] hashGuardado = (byte[])reader["PasswordHash"];
                             byte[] saltGuardado = (byte[])reader["PasswordSalt"];
@@ -196,15 +237,55 @@ namespace SISTEMA_ACUMULATIVAS
 
                             if (ClsSeguridad.VerificarPasswordHash(password, hashGuardado, saltGuardado))
                             {
-                                // Registra al usuario en la sesión global
+                                // Registra al usuario en la sesión global con su ID
                                 ClsSesion.IniciarSesion(idUsuario, nombreUsuario, rolUsuario);
                                 return true;
                             }
+                            else
+                            {
+                                MostrarError("Contraseña incorrecta.");
+                                LimpiarPasswordYFoco();
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            MostrarError("El usuario ingresado no existe.");
+                            txtUsuario.Focus();
+                            txtUsuario.SelectAll();
+                            return false;
                         }
                     }
                 }
             }
-            return false;
+        }
+
+        // ============================================================
+        //              CARGA DE DATOS DE NOTARÍA DEL USUARIO
+        // ============================================================
+
+        private void CargarDatosNotariaUsuario()
+        {
+            try
+            {
+                ClsConfiguracion config = new ClsConfiguracion();
+                var notaria = config.CargarDatosNotaria(ClsSesion.UsuarioId);
+
+                if (notaria != null)
+                {
+                    ClsSesion.CargarDatosNotaria(
+                        notaria.NumeroNotaria,
+                        notaria.NombreTitular,
+                        notaria.DireccionCompleta,
+                        notaria.Telefono,
+                        notaria.EmailContacto
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al precargar datos de notaría en login: {ex.Message}");
+            }
         }
 
         // ============================================================
@@ -217,6 +298,8 @@ namespace SISTEMA_ACUMULATIVAS
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
+                    if (conn.State != ConnectionState.Open) conn.Open();
+
                     using (SqlCommand cmd = new SqlCommand("sp_RecalcularAcumuladosDiarios", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
@@ -240,5 +323,19 @@ namespace SISTEMA_ACUMULATIVAS
             txtErrorMessage.Text = mensaje;
             errorBorder.Visibility = Visibility.Visible;
         }
+
+        private void LimpiarPasswordYFoco()
+        {
+            txtPassword.Clear();
+            txtPasswordVisible.Clear();
+            if (_passwordVisible)
+            {
+                txtPasswordVisible.Focus();
+            }
+            else
+            {
+                txtPassword.Focus();
+            }
+        }
     }
-} 
+}

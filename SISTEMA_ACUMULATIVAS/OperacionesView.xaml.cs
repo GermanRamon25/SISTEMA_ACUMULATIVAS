@@ -3,6 +3,7 @@ using SISTEMA_ACUMULATIVAS.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -88,7 +89,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- 1. CARGA DE DATOS ---
+        // --- 1. CARGA DE CLIENTES FILTRADOS POR USUARIO ---
         private void CargarClientesParaBusqueda()
         {
             try
@@ -96,9 +97,12 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 _todosLosClientes.Clear();
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    string query = "SELECT Id, Nombre, RFC FROM Clientes WHERE Activo = 1 ORDER BY Nombre";
+                    // Solo clientes activos pertenecientes al usuario en sesión
+                    string query = "SELECT Id, Nombre, RFC FROM Clientes WHERE Activo = 1 AND UsuarioId = @UsuarioId ORDER BY Nombre";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
@@ -187,7 +191,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
             if (cmbTipoOperacion.SelectedItem is TipoOperacionItem itemSeleccionado)
             {
-                // AQUÍ ESTÁ EL CAMBIO: Validamos que realmente sea un aviso obligatorio según la BD
                 if (itemSeleccionado.EsAvisoObligatorio)
                 {
                     MessageBox.Show($"¡ATENCIÓN - AVISO OBLIGATORIO!\n\nHa seleccionado:\n{itemSeleccionado.Nombre}\n\nEsta operación requiere la presentación de AVISO OBLIGATORIO ante el portal de la UIF, independientemente de que no se rebase el umbral de UMAS. Asegúrese de integrar el expediente correspondiente.",
@@ -198,7 +201,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- 3. CARGA DE TABLA DE OPERACIONES ---
+        // --- 3. CARGA DE TABLA DE OPERACIONES FILTRADA POR USUARIO ---
         private void CargarOperacionesGrid()
         {
             _operacionesCache = new List<Operacion>();
@@ -208,6 +211,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
+                    // Consulta únicamente las operaciones registradas por este usuario
                     string query = @"
                         SELECT 
                             o.Id, o.ClienteId, c.Nombre AS ClienteNombre, 
@@ -215,10 +219,13 @@ namespace SISTEMA_ACUMULATIVAS.Views
                             o.FolioEscritura, o.Descripcion 
                         FROM Operaciones o
                         INNER JOIN Clientes c ON o.ClienteId = c.Id
+                        WHERE o.UsuarioId = @UsuarioId
                         ORDER BY o.FechaOperacion DESC";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
@@ -260,7 +267,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 MessageBox.Show("Debe seleccionar un Tipo de Operación.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            if (string.IsNullOrWhiteSpace(txtMonto.Text) || !decimal.TryParse(txtMonto.Text, out decimal monto))
+
+            // Validar monto limpiando las comas de formato
+            string montoLimpio = txtMonto.Text.Replace(",", "").Trim();
+            if (string.IsNullOrWhiteSpace(montoLimpio) || !decimal.TryParse(montoLimpio, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal monto))
             {
                 MessageBox.Show("Ingrese un Monto válido.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -307,7 +317,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         query = @"UPDATE Operaciones SET 
                                   ClienteId=@ClienteId, TipoOperacion=@Tipo, Monto=@Monto, 
                                   FechaOperacion=@Fecha, FolioEscritura=@Folio, Descripcion=@Desc 
-                                  WHERE Id=@Id";
+                                  WHERE Id=@Id AND UsuarioId=@UsuarioId";
                     }
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -318,11 +328,12 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         cmd.Parameters.AddWithValue("@Fecha", fecha);
                         cmd.Parameters.AddWithValue("@Folio", folio);
                         cmd.Parameters.AddWithValue("@Desc", descripcion);
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
 
                         if (_idOperacionSeleccionada > 0)
+                        {
                             cmd.Parameters.AddWithValue("@Id", _idOperacionSeleccionada);
-                        else
-                            cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+                        }
 
                         cmd.ExecuteNonQuery();
                     }
@@ -365,7 +376,11 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 lblClienteSeleccionado.Text = $"✔ Seleccionado: {item.ClienteNombre}{rfcTexto}";
                 lblClienteSeleccionado.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#28A745"));
 
-                txtMonto.Text = item.Monto.ToString("0.00");
+                // Formatear el monto con comas y 2 decimales
+                txtMonto.TextChanged -= txtMonto_TextChanged;
+                txtMonto.Text = item.Monto.ToString("#,##0.00", CultureInfo.InvariantCulture);
+                txtMonto.TextChanged += txtMonto_TextChanged;
+
                 txtFolioEscritura.Text = item.FolioEscritura;
                 txtDescripcion.Text = item.Descripcion;
                 dpFechaOperacion.SelectedDate = item.FechaOperacion;
@@ -405,17 +420,68 @@ namespace SISTEMA_ACUMULATIVAS.Views
             cmbTipoOperacion.SelectedIndex = -1;
             _seleccionAutomatica = false; // Reactivamos la alerta
 
+            txtMonto.TextChanged -= txtMonto_TextChanged;
             txtMonto.Clear();
+            txtMonto.TextChanged += txtMonto_TextChanged;
+
             txtFolioEscritura.Clear();
             txtDescripcion.Clear();
             dpFechaOperacion.SelectedDate = DateTime.Now;
             dgOperaciones.SelectedItem = null;
         }
 
+        // --- VALIDACIÓN DE ENTRADA (SOLO DÍGITOS Y UN PUNTO) ---
         private void txtMonto_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            Regex regex = new Regex("[^0-9.]+");
-            e.Handled = regex.IsMatch(e.Text);
+            TextBox textBox = sender as TextBox;
+            if (textBox == null) return;
+
+            // Permite solo dígitos y un único punto decimal
+            if (!char.IsDigit(e.Text, 0) && (e.Text != "." || textBox.Text.Contains(".")))
+            {
+                e.Handled = true;
+            }
+        }
+
+        // --- FORMATEO AUTOMÁTICO EN TIEMPO REAL CON COMAS Y DECIMALES ---
+        private void txtMonto_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+            if (textBox == null) return;
+
+            textBox.TextChanged -= txtMonto_TextChanged;
+
+            string rawText = textBox.Text;
+            int caretIndex = textBox.CaretIndex;
+            int lengthBefore = rawText.Length;
+
+            string[] parts = rawText.Replace(",", "").Split('.');
+
+            if (parts.Length > 0 && !string.IsNullOrEmpty(parts[0]))
+            {
+                if (long.TryParse(parts[0], out long integerPart))
+                {
+                    string formatted = integerPart.ToString("#,##0", CultureInfo.InvariantCulture);
+
+                    if (rawText.Contains("."))
+                    {
+                        string decimalPart = parts.Length > 1 ? parts[1] : "";
+                        if (decimalPart.Length > 2)
+                        {
+                            decimalPart = decimalPart.Substring(0, 2);
+                        }
+                        formatted += "." + decimalPart;
+                    }
+
+                    textBox.Text = formatted;
+
+                    int lengthAfter = formatted.Length;
+                    int newCaret = caretIndex + (lengthAfter - lengthBefore);
+                    textBox.CaretIndex = Math.Max(0, Math.Min(newCaret, formatted.Length));
+                }
+            }
+
+            textBox.TextChanged += txtMonto_TextChanged;
         }
     }
 }

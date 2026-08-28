@@ -1,8 +1,11 @@
-﻿using SISTEMA_ACUMULATIVAS.Conexion;
+﻿using Microsoft.Win32;
+using SISTEMA_ACUMULATIVAS.Conexion;
 using SISTEMA_ACUMULATIVAS.Models;
+using SISTEMA_ACUMULATIVAS.Services;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,56 +15,61 @@ namespace SISTEMA_ACUMULATIVAS.Views
     public partial class AvisoUifView : UserControl
     {
         private ClsConexion _conexion;
-
-        // Umbral General (Inmuebles, Poderes, etc.) ~ $905,120.00
         private const decimal UMBRAL_AVISO_GENERAL = 8000 * 113.14m;
 
         public AvisoUifView()
         {
             InitializeComponent();
             _conexion = new ClsConexion();
-            InitializeWebView();
-        }
-
-        private async void InitializeWebView()
-        {
-            await webView.EnsureCoreWebView2Async(null);
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            CargarFechas();
+            CargarPeriodos();
         }
 
-        private void CargarFechas()
+        private void CargarPeriodos()
         {
-            if (cmbAnio.Items.Count > 0) return;
-
+            // 1. Cargar Años dinámicos (desde 2010 hasta 10 años en el futuro)
             int anioActual = DateTime.Now.Year;
-            cmbAnio.Items.Add(anioActual);
-            cmbAnio.Items.Add(anioActual - 1);
-            cmbAnio.SelectedIndex = 0;
+            List<int> anios = new List<int>();
 
-            var meses = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthNames;
-            foreach (var mes in meses.Where(m => !string.IsNullOrEmpty(m)))
+            int anioInicio = 2010;          // Años hacia atrás
+            int anioFin = anioActual + 10;  // Años hacia el futuro
+
+            for (int anio = anioFin; anio >= anioInicio; anio--)
             {
-                cmbMes.Items.Add(mes.ToUpper());
+                anios.Add(anio);
             }
-            cmbMes.SelectedIndex = DateTime.Now.Month - 1;
+
+            cmbAnio.ItemsSource = anios;
+            cmbAnio.SelectedItem = anioActual; // Selecciona el año actual
+
+            // 2. Seleccionar el mes actual por defecto
+            if (cmbMes.SelectedIndex < 0)
+            {
+                cmbMes.SelectedIndex = DateTime.Now.Month - 1;
+            }
         }
 
         private void btnBuscar_Click(object sender, RoutedEventArgs e)
         {
-            if (cmbMes.SelectedIndex < 0 || cmbAnio.SelectedItem == null) return;
+            if (cmbMes.SelectedIndex < 0 || cmbAnio.SelectedItem == null)
+            {
+                MessageBox.Show("Seleccione un mes y un año válidos.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             int mes = cmbMes.SelectedIndex + 1;
             int anio = (int)cmbAnio.SelectedItem;
+
             CargarClientesAviso(mes, anio);
         }
 
         private void CargarClientesAviso(int mes, int anio)
         {
             List<ReporteAvisoItem> listaReporte = new List<ReporteAvisoItem>();
-            webView.Visibility = Visibility.Hidden;
+            scrollFicha.Visibility = Visibility.Collapsed;
             txtInstruccion.Visibility = Visibility.Visible;
             btnImprimir.IsEnabled = false;
 
@@ -69,26 +77,37 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    // 1. Detectar clientes que operaron en el mes seleccionado
-                    string queryClientesMes = @"SELECT DISTINCT ClienteId FROM Operaciones WHERE MONTH(FechaOperacion) = @Mes AND YEAR(FechaOperacion) = @Anio";
+                    // 1. Clientes del usuario que operaron en el mes/año seleccionado
+                    string queryClientesMes = @"
+                        SELECT DISTINCT ClienteId 
+                        FROM Operaciones 
+                        WHERE MONTH(FechaOperacion) = @Mes 
+                          AND YEAR(FechaOperacion) = @Anio 
+                          AND UsuarioId = @UsuarioId";
+
                     List<int> clientesActivosIds = new List<int>();
 
                     using (SqlCommand cmd = new SqlCommand(queryClientesMes, conn))
                     {
                         cmd.Parameters.AddWithValue("@Mes", mes);
                         cmd.Parameters.AddWithValue("@Anio", anio);
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            while (reader.Read()) clientesActivosIds.Add((int)reader["ClienteId"]);
+                            while (reader.Read())
+                            {
+                                clientesActivosIds.Add((int)reader["ClienteId"]);
+                            }
                         }
                     }
 
-                    // Ventana de tiempo (6 meses atrás)
                     DateTime fechaFin = new DateTime(anio, mes, 1).AddMonths(1).AddDays(-1);
                     DateTime fechaInicio = new DateTime(fechaFin.AddMonths(-5).Year, fechaFin.AddMonths(-5).Month, 1);
 
                     foreach (int idCliente in clientesActivosIds)
                     {
+                        // 2. Acumulación de montos solo de este usuario
                         string queryAcumulado = @"
                             SELECT 
                                 c.Nombre, 
@@ -102,7 +121,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
                                 END) as TieneOperacionObligatoria
                             FROM Operaciones o
                             INNER JOIN Clientes c ON o.ClienteId = c.Id
-                            WHERE o.ClienteId = @Id AND o.FechaOperacion >= @Inicio AND o.FechaOperacion <= @Fin
+                            WHERE o.ClienteId = @Id 
+                              AND o.UsuarioId = @UsuarioId
+                              AND o.FechaOperacion >= @Inicio 
+                              AND o.FechaOperacion <= @Fin
                             GROUP BY c.Nombre, c.RFC, c.CURP";
 
                         decimal totalPeriodo = 0;
@@ -114,8 +136,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         using (SqlCommand cmd = new SqlCommand(queryAcumulado, conn))
                         {
                             cmd.Parameters.AddWithValue("@Id", idCliente);
+                            cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
                             cmd.Parameters.AddWithValue("@Inicio", fechaInicio);
                             cmd.Parameters.AddWithValue("@Fin", fechaFin);
+
                             using (SqlDataReader reader = cmd.ExecuteReader())
                             {
                                 if (reader.Read())
@@ -131,11 +155,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                         if (totalPeriodo >= UMBRAL_AVISO_GENERAL || esAvisoObligatorio)
                         {
-                            string motivo = "";
-                            if (esAvisoObligatorio)
-                                motivo = "Operación Societaria (Aviso Obligatorio)";
-                            else
-                                motivo = "Acumulación > Umbral General (8,000 UMAs)";
+                            string motivo = esAvisoObligatorio
+                                ? "Operación Societaria (Aviso Obligatorio)"
+                                : "Acumulación > Umbral General (8,000 UMAs)";
 
                             var reporteItem = new ReporteAvisoItem
                             {
@@ -151,12 +173,16 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         }
                     }
                 }
+
                 dgClientesAviso.ItemsSource = listaReporte;
-                if (listaReporte.Count == 0) MessageBox.Show("No hay avisos sujetos a reporte en este periodo.", "Sin Avisos");
+                if (listaReporte.Count == 0)
+                {
+                    MessageBox.Show("No hay avisos sujetos a reporte en este periodo para su usuario.", "Sin Avisos", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                MessageBox.Show("Error: " + ex.Message, "Error BD", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -164,14 +190,23 @@ namespace SISTEMA_ACUMULATIVAS.Views
         {
             List<Operacion> lista = new List<Operacion>();
 
-            // SE CAMBIA A ASCENDENTE PARA PODER SUMAR CRONOLÓGICAMENTE Y VER CUÁL SUPERÓ EL UMBRAL
-            string query = @"SELECT FolioEscritura, TipoOperacion, Monto, FechaOperacion FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= @Inicio AND FechaOperacion <= @Fin ORDER BY FechaOperacion ASC";
+            // 3. Desglose de actos notariales filtrado por usuario
+            string query = @"
+                SELECT FolioEscritura, TipoOperacion, Monto, FechaOperacion 
+                FROM Operaciones 
+                WHERE ClienteId = @Id 
+                  AND UsuarioId = @UsuarioId
+                  AND FechaOperacion >= @Inicio 
+                  AND FechaOperacion <= @Fin 
+                ORDER BY FechaOperacion ASC";
 
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {
                 cmd.Parameters.AddWithValue("@Id", clienteId);
+                cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
                 cmd.Parameters.AddWithValue("@Inicio", inicio);
                 cmd.Parameters.AddWithValue("@Fin", fin);
+
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
@@ -187,7 +222,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 }
             }
 
-            // --- LÓGICA PARA MARCAR LA OPERACIÓN DETONANTE ---
             decimal sumaAcumulada = 0;
             bool yaSuperoUmbral = false;
 
@@ -195,23 +229,20 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 sumaAcumulada += op.Monto;
 
-                // 1. Es operación societaria (Aviso obligatorio)
                 if (op.TipoOperacion.IndexOf("Compraventa de acciones", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     op.TipoOperacion.IndexOf("Constitución", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     op.EsDetonante = true;
                     op.EtiquetaDetonante = "Aviso Obligatorio";
                 }
-                // 2. O es la operación que hace que la suma cruce el umbral
                 else if (!yaSuperoUmbral && sumaAcumulada >= UMBRAL_AVISO_GENERAL)
                 {
                     op.EsDetonante = true;
                     op.EtiquetaDetonante = "Supera Umbral Acumulado";
-                    yaSuperoUmbral = true; // Para solo marcar la primera que cruza el umbral
+                    yaSuperoUmbral = true;
                 }
             }
 
-            // Retornamos la lista ordenada de más reciente a más antigua (como lo tenías visualmente)
             return lista.OrderByDescending(x => x.FechaOperacion).ToList();
         }
 
@@ -219,280 +250,65 @@ namespace SISTEMA_ACUMULATIVAS.Views
         {
             if (dgClientesAviso.SelectedItem is ReporteAvisoItem item)
             {
-                webView.Visibility = Visibility.Visible;
-                txtInstruccion.Visibility = Visibility.Hidden;
+                txtInstruccion.Visibility = Visibility.Collapsed;
+                scrollFicha.Visibility = Visibility.Visible;
                 btnImprimir.IsEnabled = true;
 
-                // Llamada directa al método interno
-                string htmlContent = GenerarHtmlFicha(item);
-                webView.NavigateToString(htmlContent);
+                // 1. Datos de la Notaría desde ClsSesion
+                string numNotaria = !string.IsNullOrWhiteSpace(ClsSesion.NumeroNotaria) ? ClsSesion.NumeroNotaria : "---";
+                string titular = !string.IsNullOrWhiteSpace(ClsSesion.NombreTitular) ? ClsSesion.NombreTitular.ToUpper() : "TITULAR NO CONFIGURADO";
+                string direccion = !string.IsNullOrWhiteSpace(ClsSesion.DireccionCompleta) ? ClsSesion.DireccionCompleta : "Ubicación no configurada";
+
+                txtFichaTituloNotaria.Text = $"NOTARÍA PÚBLICA NO. {numNotaria}";
+                txtFichaDireccion.Text = $"{direccion} | Control Interno LFPIORPI";
+                txtFichaTitularFirma.Text = $"LIC. {titular}";
+                txtFichaSubtituloFirma.Text = $"Notario Público Titular No. {numNotaria}";
+
+                // 2. Datos del Cliente seleccionado
+                txtFichaCliente.Text = item.NombreCliente;
+                txtFichaRfcCurp.Text = $"{item.RFC} | {item.CURP}";
+                txtFichaMonto.Text = item.MontoTotalAcumulado.ToString("C2");
+                txtFichaCriterio.Text = item.MotivoAviso;
+
+                // 3. Desglose de Operaciones
+                dgOperacionesFicha.ItemsSource = item.OperacionesDetalle;
             }
         }
 
-        private string GenerarHtmlFicha(ReporteAvisoItem item)
+        private void btnImprimir_Click(object sender, RoutedEventArgs e)
         {
-            string filasTabla = "";
-            foreach (var op in item.OperacionesDetalle)
+            ReporteAvisoItem itemSeleccionado = dgClientesAviso.SelectedItem as ReporteAvisoItem;
+            if (itemSeleccionado == null)
             {
-                // --- SE AGREGA LA ETIQUETA ROJA SI ES EL DETONANTE ---
-                string etiqueta = op.EsDetonante
-                    ? $"<br/><span style='color: #DC2626; font-size: 10px; font-weight: bold;'>[{op.EtiquetaDetonante.ToUpper()}]</span>"
-                    : "";
-
-                filasTabla += $@"
-        <tr>
-            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'>{op.FechaOperacion:dd/MM/yyyy}</td>
-            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'><strong>{op.FolioEscritura}</strong></td>
-            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0;'>{op.TipoOperacion}{etiqueta}</td>
-            <td style='padding: 8px 10px; border-bottom: 1px solid #E2E8F0; text-align: right; font-weight: bold;'>{op.Monto:C}</td>
-        </tr>";
+                MessageBox.Show("Seleccione un cliente de la lista para generar el reporte.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
 
-            return $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='UTF-8'>
-    <style>
-        @page {{
-            size: letter portrait;
-            margin: 12mm;
-        }}
-
-        @media print {{
-            body {{
-                background-color: #FFFFFF !important;
-                padding: 0 !important;
-            }}
-            .page-container {{
-                box-shadow: none !important;
-                margin: 0 !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                padding: 0 !important;
-            }}
-        }}
-
-        /* Fondo general estilo visor de documentos */
-        body {{ 
-            background-color: #525659; 
-            color: #1E293B; 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            margin: 0;
-            padding: 20px 10px; 
-            display: flex;
-            justify-content: center;
-        }}
-
-        /* Hoja de papel Carta fija y centrada */
-        .page-container {{
-            background-color: #FFFFFF;
-            width: 780px;
-            min-height: 980px;
-            padding: 40px 45px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
-            box-sizing: border-box;
-            border-radius: 2px;
-        }}
-
-        .header {{ 
-            text-align: center; 
-            border-bottom: 2px solid #0284C7; 
-            padding-bottom: 10px; 
-            margin-bottom: 16px; 
-        }}
-        .header h1 {{ 
-            margin: 0; 
-            font-size: 17px; 
-            color: #0F172A; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
-        }}
-        .header h2 {{ 
-            margin: 3px 0 0 0; 
-            font-size: 13px; 
-            color: #0284C7; 
-            font-weight: 600; 
-        }}
-        .header p {{ 
-            margin: 2px 0 0 0; 
-            font-size: 11px; 
-            color: #64748B; 
-        }}
-
-        .legal-box {{ 
-            background-color: #F8FAFC; 
-            border-left: 4px solid #0284C7; 
-            padding: 8px 12px; 
-            margin-bottom: 16px; 
-            font-size: 11px; 
-            color: #334155; 
-            line-height: 1.4;
-            text-align: justify;
-        }}
-
-        .info-table {{ 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-bottom: 16px; 
-        }}
-        .info-table td {{ 
-            padding: 5px 8px; 
-            border-bottom: 1px solid #E2E8F0; 
-            font-size: 12px; 
-        }}
-        .info-table .label {{ 
-            font-weight: bold; 
-            width: 32%; 
-            color: #475569; 
-            background-color: #F8FAFC; 
-        }}
-
-        .table-grid {{ 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 6px; 
-            margin-bottom: 16px; 
-        }}
-        .table-grid th {{ 
-            background-color: #1E293B; 
-            color: white; 
-            padding: 7px 10px; 
-            font-size: 11.5px; 
-            text-align: left; 
-        }}
-
-        .alert-box {{ 
-            background-color: #FEF2F2; 
-            border-left: 4px solid #DC2626; 
-            padding: 8px 12px; 
-            margin-bottom: 20px; 
-            font-size: 11px; 
-            color: #7F1D1D; 
-            line-height: 1.4;
-            text-align: justify;
-        }}
-
-        .footer {{ 
-            margin-top: 30px; 
-            text-align: center; 
-            font-size: 11.5px; 
-        }}
-        .signature-line {{ 
-            width: 240px; 
-            border-top: 1px solid #64748B; 
-            margin: 35px auto 6px auto; 
-        }}
-        .system-foot {{ 
-            margin-top: 18px; 
-            font-size: 9.5px; 
-            color: #94A3B8; 
-            border-top: 1px solid #E2E8F0; 
-            padding-top: 5px; 
-        }}
-    </style>
-</head>
-<body>
-
-    <div class='page-container'>
-
-        <div class='header'>
-            <h1>Notaría Pública No. 215</h1>
-            <h2>Ficha Informativa de Operación Vulnerable y Acumulación</h2>
-            <p>Guasave, Sinaloa | Control Interno LFPIORPI</p>
-        </div>
-
-        <div class='legal-box'>
-            <strong>FUNDAMENTO LEGAL (LFPIORPI):</strong><br/>
-            Conforme a lo dispuesto por el artículo 17, fracción XII, y artículo 18 de la Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita, así como los artículos 27 y 30 de sus Reglas de Carácter General, se emite la presente ficha técnica relativa al registro de actos, acumulación de montos y seguimiento de umbrales en Unidades de Medida y Actualización (UMA).
-        </div>
-
-        <table class='info-table'>
-            <tr>
-                <td class='label'>Cliente / Razón Social:</td>
-                <td><strong>{item.NombreCliente}</strong></td>
-            </tr>
-            <tr>
-                <td class='label'>RFC / CURP:</td>
-                <td>{item.RFC} | {item.CURP}</td>
-            </tr>
-            <tr>
-                <td class='label'>Monto Total Acumulado (6 Meses):</td>
-                <td><strong style='color: #0284C7; font-size: 13.5px;'>{item.MontoTotalAcumulado:C}</strong></td>
-            </tr>
-            <tr>
-                <td class='label'>Motivo / Criterio del Aviso:</td>
-                <td><strong style='color: #DC2626;'>{item.MotivoAviso}</strong></td>
-            </tr>
-        </table>
-
-        <div style='font-size: 12px; font-weight: bold; color: #1E293B; margin-bottom: 4px;'>Desglose de Operaciones en el Periodo</div>
-        <table class='table-grid'>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Folio</th>
-                    <th>Tipo de Operación Notarial</th>
-                    <th style='text-align: right;'>Monto</th>
-                </tr>
-            </thead>
-            <tbody>
-                {filasTabla}
-            </tbody>
-        </table>
-
-        <div class='alert-box'>
-            <strong>DISPOSICIÓN PARA PRESENTACIÓN DE AVISO (PORTAL SPPLD):</strong><br/>
-            La presente ficha técnica certifica que el monto o la naturaleza del acto notarial actualiza la obligación de emitir el Aviso correspondiente a través del Portal de Prevención de Lavado de Dinero (SPPLD - SAT). El aviso deberá formalizarse a más tardar el <strong>día 17 del mes inmediato siguiente</strong> a la fecha del instrumento notarial. La información descrita ha sido validada contra el protocolo notarial.
-        </div>
-
-        <div class='footer'>
-            <div class='signature-line'></div>
-            <strong>LIC. SERGIO AGUILASOCHO GARCÍA</strong><br/>
-            <span>Notario Público Titular No. 215</span>
-            
-            <div class='system-foot'>
-                2026 SISTEMA DE ACUMULATIVAS | Control de Umbrales y Acumulaciones Notariales
-            </div>
-        </div>
-
-    </div>
-
-</body>
-</html>";
-        }
-
-        private async void btnImprimir_Click(object sender, RoutedEventArgs e)
-        {
-            if (webView != null && webView.CoreWebView2 != null)
+            try
             {
-                try
+                SaveFileDialog saveDialog = new SaveFileDialog
                 {
-                    // 1. Ruta temporal para el archivo PDF
-                    string rutaTemp = System.IO.Path.Combine(
-                        System.IO.Path.GetTempPath(),
-                        $"Ficha_Vulnerable_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
-                    );
+                    Filter = "Documento PDF (*.pdf)|*.pdf",
+                    FileName = $"Ficha_UIF_{itemSeleccionado.RFC}_{DateTime.Now:yyyyMMdd}.pdf",
+                    Title = "Guardar Ficha Informativa UIF"
+                };
 
-                    // 2. Configurar la exportación PDF nativa de WebView2 sin cabeceras web
-                    var printSettings = webView.CoreWebView2.Environment.CreatePrintSettings();
-                    printSettings.ShouldPrintHeaderAndFooter = false; // QUITA COMPLETAMENTE 'about:blank' Y FECHAS
-                    printSettings.ShouldPrintBackgrounds = true;      // Mantiene colores y membretes
+                if (saveDialog.ShowDialog() == true)
+                {
+                    // Genera el archivo PDF directamente con diseño estructurado
+                    PdfReporteService.GenerarFichaUif(saveDialog.FileName, itemSeleccionado);
 
-                    // 3. Generar el archivo PDF limpio
-                    await webView.CoreWebView2.PrintToPdfAsync(rutaTemp, printSettings);
+                    var respuesta = MessageBox.Show("Ficha generada exitosamente.\n\n¿Desea abrir el archivo ahora?", "Éxito", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
-                    // 4. Abrir el PDF generado de inmediato
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    if (respuesta == MessageBoxResult.Yes)
                     {
-                        FileName = rutaTemp,
-                        UseShellExecute = true
-                    });
+                        Process.Start(new ProcessStartInfo(saveDialog.FileName) { UseShellExecute = true });
+                    }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error al exportar/imprimir la ficha: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al generar el PDF: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

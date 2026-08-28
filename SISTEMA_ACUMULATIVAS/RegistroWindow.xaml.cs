@@ -1,8 +1,10 @@
-﻿using SISTEMA_ACUMULATIVAS.Conexion;
-using System;
+﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using SISTEMA_ACUMULATIVAS.Conexion;
 
 namespace SISTEMA_ACUMULATIVAS
 {
@@ -16,7 +18,7 @@ namespace SISTEMA_ACUMULATIVAS
         {
             InitializeComponent();
             _conexion = new ClsConexion();
-            txtNombreCompleto.Focus();
+            this.Loaded += (s, e) => txtNombreCompleto.Focus();
         }
 
         // ============================================================
@@ -74,6 +76,18 @@ namespace SISTEMA_ACUMULATIVAS
         }
 
         // ============================================================
+        //              EVENTO ENTER PARA INPUTS
+        // ============================================================
+
+        private void Input_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                btnRegistrar_Click(btnRegistrar, new RoutedEventArgs());
+            }
+        }
+
+        // ============================================================
         //              EVENTOS DE NAVEGACIÓN Y ACCIÓN
         // ============================================================
 
@@ -86,52 +100,80 @@ namespace SISTEMA_ACUMULATIVAS
         {
             string nombre = txtNombreCompleto.Text.Trim();
             string usuario = txtUsuario.Text.Trim();
-            string password = _passwordVisible ? txtPasswordVisible.Text : txtPassword.Password;
-            string confirmPassword = _confirmPasswordVisible ? txtConfirmPasswordVisible.Text : txtConfirmPassword.Password;
 
-            if (string.IsNullOrEmpty(nombre) || string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
+            // 1. Obtener contraseñas según visibilidad
+            string password = _passwordVisible ? txtPasswordVisible.Text : txtPassword.Password;
+            string confirmarPassword = _confirmPasswordVisible ? txtConfirmPasswordVisible.Text : txtConfirmPassword.Password;
+
+            // 2. Validación únicamente de campos obligatorios no vacíos
+            if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(usuario) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Por favor, complete todos los campos obligatorios.", "Campos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Por favor llena todos los campos.", "Campos vacíos", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (string.IsNullOrWhiteSpace(nombre)) txtNombreCompleto.Focus();
+                else if (string.IsNullOrWhiteSpace(usuario)) txtUsuario.Focus();
+                else if (_passwordVisible) txtPasswordVisible.Focus(); else txtPassword.Focus();
                 return;
             }
 
-            if (password != confirmPassword)
+            // 3. Validación de coincidencia de contraseñas
+            if (password != confirmarPassword)
             {
-                MessageBox.Show("Las contraseñas no coinciden.", "Error de Contraseña", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Las contraseñas no coinciden.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                txtConfirmPassword.Clear();
+                txtConfirmPasswordVisible.Clear();
+                if (_confirmPasswordVisible) txtConfirmPasswordVisible.Focus(); else txtConfirmPassword.Focus();
+                return;
+            }
+
+            // 4. Validación de conexión con la base de datos
+            if (!_conexion.TestConnection())
+            {
+                MessageBox.Show("No se pudo conectar a la base de datos. Verifica tu conexión SQL.", "Error de Conexión", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // 5. Validación de usuario duplicado
+            if (UsuarioExiste(usuario))
+            {
+                MessageBox.Show("El nombre de usuario ya se encuentra registrado. Elige otro.", "Usuario duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                txtUsuario.Focus();
+                txtUsuario.SelectAll();
                 return;
             }
 
             try
             {
-                // 1. Validar si ya existe el usuario
-                if (UsuarioExiste(usuario))
+                // Encriptación de contraseña libre (cualquier longitud o caracteres)
+                ClsSeguridad.CrearPasswordHash(password, out byte[] passwordHash, out byte[] passwordSalt);
+
+                // Inserción en la base de datos
+                int nuevoUsuarioId = RegistrarUsuarioYRetornarId(nombre, usuario, passwordHash, passwordSalt);
+
+                if (nuevoUsuarioId > 0)
                 {
-                    MessageBox.Show("El nombre de usuario ya está registrado.", "Usuario Existente", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
+                    MessageBox.Show("Usuario registrado con éxito. A continuación configure los datos de la notaría.",
+                                    "Paso siguiente", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    this.Visibility = Visibility.Collapsed;
+
+                    DatosNotariaWindow frmNotaria = new DatosNotariaWindow(nuevoUsuarioId);
+                    frmNotaria.Owner = this.Owner;
+                    frmNotaria.ShowDialog();
+
+                    this.Close();
                 }
-
-                // 2. Generar Hash y Salt
-                ClsSeguridad.CrearPasswordHash(password, out byte[] hash, out byte[] salt);
-
-                // 3. Registrar en BD
-                RegistrarUsuario(nombre, usuario, hash, salt);
-
-                MessageBox.Show("Usuario registrado exitosamente. A continuación configure los datos de la notaría.",
-                                "Registro Exitoso",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Information);
-
-                // 4. Abrir la ventana modal de datos de la Notaría
-                DatosNotariaWindow notariaWin = new DatosNotariaWindow();
-                notariaWin.Owner = this;
-                notariaWin.ShowDialog();
-
-                // 5. Cerrar registro
-                this.Close();
+                else
+                {
+                    MessageBox.Show("No se pudo registrar el usuario en la base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (SqlException sqlEx)
+            {
+                MessageBox.Show($"Error de base de datos ({sqlEx.Number}): {sqlEx.Message}", "Error SQL", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ocurrió un error al registrar: " + ex.Message, "Error Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Ocurrió un error en el registro: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -143,6 +185,8 @@ namespace SISTEMA_ACUMULATIVAS
         {
             using (SqlConnection conn = _conexion.GetConnection())
             {
+                if (conn.State != ConnectionState.Open) conn.Open();
+
                 string query = "SELECT 1 FROM Usuarios WHERE Usuario = @usuario";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -153,12 +197,15 @@ namespace SISTEMA_ACUMULATIVAS
             }
         }
 
-        private void RegistrarUsuario(string nombre, string usuario, byte[] hash, byte[] salt)
+        private int RegistrarUsuarioYRetornarId(string nombre, string usuario, byte[] hash, byte[] salt)
         {
             using (SqlConnection conn = _conexion.GetConnection())
             {
-                string query = @"INSERT INTO Usuarios (Usuario, NombreCompleto, PasswordHash, PasswordSalt, Rol, Activo) 
-                                 VALUES (@usuario, @nombre, @hash, @salt, 'Operador', 1)";
+                if (conn.State != ConnectionState.Open) conn.Open();
+
+                string query = @"INSERT INTO Usuarios (Usuario, NombreCompleto, PasswordHash, PasswordSalt, Rol, Activo, FechaCreacion) 
+                                 VALUES (@usuario, @nombre, @hash, @salt, 'Operador', 1, GETDATE());
+                                 SELECT SCOPE_IDENTITY();";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -167,7 +214,8 @@ namespace SISTEMA_ACUMULATIVAS
                     cmd.Parameters.AddWithValue("@hash", hash);
                     cmd.Parameters.AddWithValue("@salt", salt);
 
-                    cmd.ExecuteNonQuery();
+                    object result = cmd.ExecuteScalar();
+                    return (result != null && result != DBNull.Value) ? Convert.ToInt32(result) : 0;
                 }
             }
         }

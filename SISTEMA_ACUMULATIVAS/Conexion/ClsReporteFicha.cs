@@ -228,7 +228,7 @@ namespace SISTEMA_ACUMULATIVAS.Services
         <span>Notario Público Titular No. 215</span>
         
         <div class='system-foot'>
-            2026 SISTEMA DE ACUMULATIVAS | Control de Umbrales y Acumulaciones Notariales
+            2026 SISTEMA DE ACUMULATIVAS AG | Control de Umbrales y Acumulaciones Notariales
         </div>
     </div>
 

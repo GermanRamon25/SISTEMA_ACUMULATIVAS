@@ -59,7 +59,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             CargarGraficoOperaciones(null);
         }
 
-        // --- 1. LÓGICA TABLA Y GRÁFICA DE CLIENTES (NUEVA REGLA DE NEGOCIO Y FECHA REAL) ---
+        // --- 1. LÓGICA TABLA Y GRÁFICA DE CLIENTES (FILTRADO POR USUARIO) ---
         private void CargarTopClientesYAlertas()
         {
             List<Acumulado> listaAcumulados = new List<Acumulado>();
@@ -83,19 +83,22 @@ namespace SISTEMA_ACUMULATIVAS.Views
 
                 using (SqlConnection conn = _conexion.GetConnection())
                 {
-                    // --- CAMBIO APLICADO AQUÍ: Buscamos la MAX(FechaOperacion) real ---
+                    // Consulta filtrando estrictamente por el UsuarioId en sesión
                     string query = @"
                         SELECT 
                             c.Id, 
                             c.Nombre, 
                             a.TotalAcumulado, 
-                            ISNULL((SELECT MAX(FechaOperacion) FROM Operaciones WHERE ClienteId = c.Id), a.UltimaActualizacion) AS UltimaActividadReal
+                            ISNULL((SELECT MAX(FechaOperacion) FROM Operaciones WHERE ClienteId = c.Id AND UsuarioId = @UsuarioId), a.UltimaActualizacion) AS UltimaActividadReal
                         FROM Acumulados a
                         INNER JOIN Clientes c ON a.ClienteId = c.Id
-                        WHERE a.TotalAcumulado > 0";
+                        WHERE a.TotalAcumulado > 0 
+                          AND c.UsuarioId = @UsuarioId";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
@@ -111,7 +114,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                                     ClienteId = (int)reader["Id"],
                                     ClienteNombre = reader["Nombre"].ToString(),
                                     MontoAcumulado = total,
-                                    // --- CAMBIO APLICADO AQUÍ: Leemos 'UltimaActividadReal' ---
                                     UltimaActualizacion = (DateTime)reader["UltimaActividadReal"],
                                     PorcentajeUmbral = porcentaje,
                                     EstadoAlerta = estado
@@ -127,20 +129,18 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 listaAcumulados = listaAcumulados.OrderByDescending(x => x.MontoAcumulado).ToList();
                 dgAlertas.ItemsSource = listaAcumulados;
 
-                // --- NUEVA REGLA PARA LA GRÁFICA: TOP 10 + LOS QUE EXCEDAN EL UMBRAL ---
+                // --- TOP 10 + LOS QUE EXCEDAN EL UMBRAL ---
                 var top10 = listaAcumulados.Take(10).ToList();
                 var excedenUmbral = listaAcumulados.Where(x => x.MontoAcumulado >= montoUmbral).ToList();
 
-                // Combinamos ambas listas, quitamos duplicados y ordenamos
                 var clientesParaGrafica = top10.Union(excedenUmbral)
                                                .OrderByDescending(x => x.MontoAcumulado)
                                                .ToList();
 
-                // Determinamos el monto mayor para que ocupe el 100% de la barra
                 decimal maxMonto = clientesParaGrafica.Any() ? clientesParaGrafica.Max(x => x.MontoAcumulado) : 1;
                 if (maxMonto == 0) maxMonto = 1;
 
-                double maxAnchoPixeles = 420; // Ajustado para que las barras tengan buen tamaño
+                double maxAnchoPixeles = 420;
 
                 foreach (var cliente in clientesParaGrafica)
                 {
@@ -151,7 +151,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         NombreCliente = cliente.ClienteNombre,
                         Monto = cliente.MontoAcumulado,
                         AnchoBarraVirtual = (double)(cliente.MontoAcumulado / maxMonto) * maxAnchoPixeles,
-                        // Asignamos degradados premium
                         ColorBarra = supero ? ObtenerDegradadoRojo() : ObtenerDegradadoAzul(),
                         ColorTextoMonto = supero ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#B91C1C"))
                                                  : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A"))
@@ -161,7 +160,10 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 DataContext = null;
                 DataContext = this;
             }
-            catch (Exception ex) { MessageBox.Show("Error carga: " + ex.Message); }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error carga: " + ex.Message);
+            }
         }
 
         // --- 2. LÓGICA FILTRO ---
@@ -179,7 +181,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             CargarGraficoOperaciones(null);
         }
 
-        // --- 3. LÓGICA GRÁFICA TIPOS (BARRAS CORPORATIVAS) ---
+        // --- 3. LÓGICA GRÁFICA TIPOS DE OPERACIÓN (FILTRADO POR USUARIO) ---
         private void CargarGraficoOperaciones(int? clienteId, string nombreCliente = "")
         {
             ListaGraficaOperaciones = new List<OperacionGraficaItem>();
@@ -193,16 +195,32 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     SqlCommand cmd = new SqlCommand();
                     cmd.Connection = conn;
 
+                    // Asignamos el parámetro UsuarioId obligatorio
+                    cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                     if (clienteId.HasValue)
                     {
-                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE ClienteId = @Id AND FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad DESC";
+                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad 
+                                  FROM Operaciones 
+                                  WHERE ClienteId = @Id 
+                                    AND UsuarioId = @UsuarioId 
+                                    AND FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) 
+                                  GROUP BY TipoOperacion 
+                                  ORDER BY Cantidad DESC";
+
                         cmd.Parameters.AddWithValue("@Id", clienteId.Value);
                         txtTituloPastel.Text = $"Operaciones de: {nombreCliente}";
                         btnVerGlobal.Visibility = Visibility.Visible;
                     }
                     else
                     {
-                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad FROM Operaciones WHERE FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) GROUP BY TipoOperacion ORDER BY Cantidad DESC";
+                        query = @"SELECT TipoOperacion, COUNT(*) as Cantidad 
+                                  FROM Operaciones 
+                                  WHERE UsuarioId = @UsuarioId 
+                                    AND FechaOperacion >= DATEADD(MONTH, -6, GETDATE()) 
+                                  GROUP BY TipoOperacion 
+                                  ORDER BY Cantidad DESC";
+
                         txtTituloPastel.Text = "Distribución Global de Actividades";
                         btnVerGlobal.Visibility = Visibility.Collapsed;
                     }
@@ -231,14 +249,17 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 foreach (var op in tempList)
                 {
                     op.AnchoBarraVirtual = ((double)op.Cantidad / maxCantidad) * maxAnchoPixeles;
-                    op.ColorBarra = colorSecundario; // Un color distinto para separar métricas
+                    op.ColorBarra = colorSecundario;
                     ListaGraficaOperaciones.Add(op);
                 }
 
                 DataContext = null;
                 DataContext = this;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar gráfico de operaciones: {ex.Message}");
+            }
         }
 
         // --- GENERADORES DE DEGRADADOS PARA EL DISEÑO CORPORATIVO ---

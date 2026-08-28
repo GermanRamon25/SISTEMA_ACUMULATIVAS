@@ -146,7 +146,7 @@ namespace SISTEMA_ACUMULATIVAS
             return dt;
         }
 
-        // 3. INSERCIÓN MASIVA EN SQL SERVER CON VALIDACIÓN UNIVERSAL Y FECHA HISTÓRICA
+        // 3. INSERCIÓN MASIVA EN SQL SERVER ASOCIANDO AL USUARIO EN SESIÓN
         private void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
             if (dtClientes == null || dtClientes.Rows.Count == 0) return;
@@ -163,13 +163,15 @@ namespace SISTEMA_ACUMULATIVAS
             {
                 using (SqlConnection con = conexionService.GetConnection())
                 {
-                    // Si @FechaRegistro es nulo, SQL Server usa GETDATE() por defecto
+                    if (con.State != ConnectionState.Open) con.Open();
+
+                    // La consulta valida duplicidad únicamente dentro de la cartera del usuario actual
                     string query = @"
-                IF NOT EXISTS (SELECT 1 FROM Clientes WHERE RFC = @RFC)
-                BEGIN
-                    INSERT INTO Clientes (Nombre, RFC, CURP, TipoPersona, FechaRegistro, Activo)
-                    VALUES (@Nombre, @RFC, @CURP, @TipoPersona, ISNULL(@FechaRegistro, GETDATE()), 1);
-                END";
+                    IF NOT EXISTS (SELECT 1 FROM Clientes WHERE RFC = @RFC AND UsuarioId = @UsuarioId AND Activo = 1)
+                    BEGIN
+                        INSERT INTO Clientes (Nombre, RFC, CURP, TipoPersona, UsuarioId, FechaRegistro, Activo)
+                        VALUES (@Nombre, @RFC, @CURP, @TipoPersona, @UsuarioId, ISNULL(@FechaRegistro, GETDATE()), 1);
+                    END";
 
                     foreach (DataRow fila in dtClientes.Rows)
                     {
@@ -188,7 +190,7 @@ namespace SISTEMA_ACUMULATIVAS
 
                             string valorLimpio = valor.ToUpper().Replace(" ", "").Replace("-", "");
 
-                            // ¿Es Fecha de Registro histórica? (ej: 15/03/2024, 2024-05-10)
+                            // ¿Es Fecha de Registro histórica?
                             if (DateTime.TryParse(valor, out DateTime fechaParsed))
                             {
                                 if (fechaParsed.Year >= 1990 && fechaParsed <= DateTime.Now)
@@ -221,7 +223,7 @@ namespace SISTEMA_ACUMULATIVAS
                                 continue;
                             }
 
-                            // Si no es Fecha, RFC, CURP ni Tipo, y no es número (#), evaluamos si es el Nombre
+                            // Evaluación del Nombre
                             if (!int.TryParse(valor, out _) && valor.Length > mayorLongitudTexto)
                             {
                                 if (!valor.ToUpper().Contains("PADRÓN") &&
@@ -248,13 +250,14 @@ namespace SISTEMA_ACUMULATIVAS
                             tipoPersonaEncontrado = (rfcEncontrado.Length == 12) ? "M" : "F";
                         }
 
-                        // 4. Inserción con parámetro de fecha
+                        // 4. Inserción asignando el UsuarioId de la sesión actual
                         using (SqlCommand cmd = new SqlCommand(query, con))
                         {
                             cmd.Parameters.AddWithValue("@Nombre", nombreCandidato);
                             cmd.Parameters.AddWithValue("@RFC", rfcEncontrado);
                             cmd.Parameters.AddWithValue("@CURP", string.IsNullOrWhiteSpace(curpEncontrado) ? (object)DBNull.Value : curpEncontrado);
                             cmd.Parameters.AddWithValue("@TipoPersona", tipoPersonaEncontrado);
+                            cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
                             cmd.Parameters.AddWithValue("@FechaRegistro", fechaRegistroEncontrada.HasValue ? (object)fechaRegistroEncontrada.Value : DBNull.Value);
 
                             int filasAfectadas = cmd.ExecuteNonQuery();
@@ -287,4 +290,4 @@ namespace SISTEMA_ACUMULATIVAS
             this.Close();
         }
     }
-}
+}   

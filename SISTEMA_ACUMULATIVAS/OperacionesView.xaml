@@ -359,6 +359,7 @@
                     <TextBlock Text="Monto de la Operación:" FontWeight="Medium" Margin="0,0,0,5"/>
                     <TextBox x:Name="txtMonto" 
                              Style="{StaticResource ModernInputStyle}"
+                             TextChanged="txtMonto_TextChanged"
                              PreviewTextInput="txtMonto_PreviewTextInput"/>
 
                     <!-- FECHA DE OPERACIÓN -->

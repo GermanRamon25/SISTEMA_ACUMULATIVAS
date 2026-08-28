@@ -1,18 +1,7 @@
 ﻿using SISTEMA_ACUMULATIVAS.Conexion;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Data.SqlClient;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace SISTEMA_ACUMULATIVAS
 {
@@ -21,9 +10,8 @@ namespace SISTEMA_ACUMULATIVAS
         public MainWindow()
         {
             InitializeComponent();
-            CargarBannerNotaria();
-            CargarDatosNotariaBanner();
             CargarDatosSesion();
+            CargarDatosNotariaBanner();
         }
 
         private void CargarDatosSesion()
@@ -32,106 +20,55 @@ namespace SISTEMA_ACUMULATIVAS
             if (ClsSesion.UsuarioId != 0)
             {
                 lblUsuarioActual.Text = ClsSesion.NombreUsuario;
-
-                // --- CAMBIO: Se removió la validación de rol (Admin vs Operador).
-                // Ahora el panel de control siempre se muestra para cualquier usuario.
                 tabPanelControl.Visibility = Visibility.Visible;
             }
             else
             {
-                // Si por alguna razón se abre esta ventana sin login, la cerramos.
                 MessageBox.Show("Error de sesión. Nadie ha iniciado sesión.", "Error Fatal", MessageBoxButton.OK, MessageBoxImage.Stop);
                 Application.Current.Shutdown();
             }
         }
 
-        private void CargarBannerNotaria()
-        {
-            ClsConfiguracion config = new ClsConfiguracion();
-
-            // Pasamos el ID del usuario en sesión actual
-            var notaria = config.CargarDatosNotaria(ClsSesion.UsuarioId);
-
-            if (notaria != null)
-            {
-                txtBannerNotaria.Text = $"NOTARÍA PÚBLICA NO. {notaria.NumeroNotaria} - {notaria.NombreTitular}";
-            }
-            else
-            {
-                txtBannerNotaria.Text = "NOTARÍA PÚBLICA (SIN CONFIGURAR)";
-            }
-        }
-
-        private void btnCerrarSesion_Click(object sender, RoutedEventArgs e)
-        {
-            // 1. Preguntar si está seguro
-            if (MessageBox.Show("¿Está seguro de que desea cerrar la sesión?", "Confirmar Cierre", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
-            {
-                return;
-            }
-
-            // 2. Limpiar la sesión global
-            ClsSesion.CerrarSesion();
-
-            // 3. Ocultamos la ventana actual (Dashboard) para que se vea limpio mientras carga el login
-            this.Hide();
-
-            // 4. Abrir la ventana de Login EN MODO DIÁLOGO
-            LoginWindow login = new LoginWindow();
-
-            // Usamos ShowDialog() en lugar de Show(). 
-            // Esto permite que 'DialogResult = true' funcione en LoginWindow.xaml.cs
-            bool? resultado = login.ShowDialog();
-
-            if (resultado == true)
-            {
-                // Si el usuario se logueó correctamente, creamos un NUEVO Dashboard
-                // Esto reinicia la ventana principal con los permisos del nuevo usuario
-                MainWindow nuevoDashboard = new MainWindow();
-
-                // Le decimos a la App que esta es la nueva ventana principal
-                Application.Current.MainWindow = nuevoDashboard;
-
-                nuevoDashboard.Show();
-
-                // Cerramos definitivamente esta instancia vieja del Dashboard
-                this.Close();
-            }
-            else
-            {
-                // Si cerró la ventana de Login sin entrar (canceló), apagamos la app por completo
-                Application.Current.Shutdown();
-            }
-        }
-
-        private void CargarDatosNotariaBanner()
+        public void CargarDatosNotariaBanner()
         {
             try
             {
-                Conexion.ClsConexion conexionDb = new Conexion.ClsConexion();
+                ClsConexion conexionDb = new ClsConexion();
 
                 using (var con = conexionDb.GetConnection())
                 {
-                    if (con.State != System.Data.ConnectionState.Open)
-                        con.Open();
+                    // Consultamos las columnas reales de la tabla DatosNotaria
+                    string query = @"SELECT TOP 1 NumeroNotaria, NombreTitular, DireccionCompleta, Telefono, EmailContacto 
+                                     FROM DatosNotaria 
+                                     WHERE UsuarioId = @UsuarioId OR UsuarioId IS NULL 
+                                     ORDER BY Id DESC";
 
-                    // Filtramos por el UsuarioId de la sesión
-                    string query = "SELECT NumeroNotaria, Municipio FROM DatosNotaria WHERE UsuarioId = @UsuarioId";
-
-                    using (var cmd = new System.Data.SqlClient.SqlCommand(query, con))
+                    using (var cmd = new SqlCommand(query, con))
                     {
-                        cmd.Parameters.AddWithValue("@UsuarioId", Conexion.ClsSesion.UsuarioId);
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
 
                         using (var dr = cmd.ExecuteReader())
                         {
                             if (dr.Read())
                             {
                                 string num = dr["NumeroNotaria"] != DBNull.Value ? dr["NumeroNotaria"].ToString() : "";
-                                string municipio = dr["Municipio"] != DBNull.Value ? dr["Municipio"].ToString() : "";
+                                string titular = dr["NombreTitular"] != DBNull.Value ? dr["NombreTitular"].ToString() : "";
+                                string direccion = dr["DireccionCompleta"] != DBNull.Value ? dr["DireccionCompleta"].ToString() : "";
+                                string telefono = dr["Telefono"] != DBNull.Value ? dr["Telefono"].ToString() : "";
+                                string email = dr["EmailContacto"] != DBNull.Value ? dr["EmailContacto"].ToString() : "";
 
-                                txtBannerNotaria.Text = !string.IsNullOrWhiteSpace(num)
-                                    ? $"NOTARÍA PÚBLICA NO. {num}" + (!string.IsNullOrWhiteSpace(municipio) ? $" - {municipio.ToUpper()}" : "")
-                                    : "NOTARÍA PÚBLICA";
+                                // Guardamos en ClsSesion para que AvisoUifView y otros módulos lo utilicen sin consultar de nuevo
+                                ClsSesion.CargarDatosNotaria(num, titular, direccion, telefono, email);
+
+                                // Formateamos el texto del header superior izquierdo
+                                if (!string.IsNullOrWhiteSpace(num))
+                                {
+                                    txtBannerNotaria.Text = $"NOTARÍA PÚBLICA NO. {num}";
+                                }
+                                else
+                                {
+                                    txtBannerNotaria.Text = "NOTARÍA PÚBLICA";
+                                }
                             }
                             else
                             {
@@ -141,8 +78,9 @@ namespace SISTEMA_ACUMULATIVAS
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar banner de notaría: {ex.Message}");
                 txtBannerNotaria.Text = "NOTARÍA PÚBLICA";
             }
         }
@@ -152,10 +90,36 @@ namespace SISTEMA_ACUMULATIVAS
             DatosNotariaWindow ventanaNotaria = new DatosNotariaWindow();
             ventanaNotaria.Owner = this;
 
-            // Abre la ventana modal y actualiza el encabezado al cerrar
+            // Abre la ventana modal y actualiza el encabezado al guardar cambios
             if (ventanaNotaria.ShowDialog() == true)
             {
                 CargarDatosNotariaBanner();
+            }
+        }
+
+        private void btnCerrarSesion_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("¿Está seguro de que desea cerrar la sesión?", "Confirmar Cierre", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
+            {
+                return;
+            }
+
+            ClsSesion.CerrarSesion();
+            this.Hide();
+
+            LoginWindow login = new LoginWindow();
+            bool? resultado = login.ShowDialog();
+
+            if (resultado == true)
+            {
+                MainWindow nuevoDashboard = new MainWindow();
+                Application.Current.MainWindow = nuevoDashboard;
+                nuevoDashboard.Show();
+                this.Close();
+            }
+            else
+            {
+                Application.Current.Shutdown();
             }
         }
     }

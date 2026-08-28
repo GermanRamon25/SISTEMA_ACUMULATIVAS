@@ -30,14 +30,13 @@ namespace SISTEMA_ACUMULATIVAS.Views
         // --- VALIDACIÓN VISUAL: BLOQUEAR ESPACIOS (Para RFC y CURP) ---
         private void TxtSinEspacios_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            // Si la tecla presionada es ESPACIO, cancelamos el evento
             if (e.Key == Key.Space)
             {
                 e.Handled = true;
             }
         }
 
-        // --- 1. LECTURA (READ) ---
+        // --- 1. LECTURA (READ) FILTRADA POR USUARIO ---
         private void CargarClientes()
         {
             _clientesCache = new List<Cliente>();
@@ -49,9 +48,15 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 {
                     if (conn.State != System.Data.ConnectionState.Open) conn.Open();
 
-                    string query = "SELECT Id, Nombre, RFC, CURP, TipoPersona, FechaRegistro, Activo FROM Clientes WHERE Activo = 1";
+                    // Consulta filtrando por el UsuarioId en sesión
+                    string query = @"SELECT Id, Nombre, RFC, CURP, TipoPersona, FechaRegistro, Activo 
+                                     FROM Clientes 
+                                     WHERE Activo = 1 AND UsuarioId = @UsuarioId";
+
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
@@ -94,8 +99,8 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 return;
             }
 
-            // B) Obtención de datos (Nombre libre, RFC/CURP en mayúsculas)
-            string nombre = txtNombre.Text.Trim(); // Se respeta minúsculas/mayúsculas del usuario
+            // B) Obtención de datos
+            string nombre = txtNombre.Text.Trim();
             string rfc = txtRFC.Text.Trim().ToUpper();
             string curp = txtCURP.Text.Trim().ToUpper();
             string tipoPersona = ((ComboBoxItem)cmbTipoPersona.SelectedItem).Tag.ToString();
@@ -118,20 +123,17 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 idActual = int.Parse(txtId.Text);
             }
 
-            // --- AQUÍ ESTÁ LA CORRECCIÓN QUE PEDISTE (MODO PREGUNTA) ---
+            // Validación de duplicados dentro de la cartera del mismo usuario
             string mensajeDuplicado = ValidarDuplicado(nombre, rfc, idActual);
             if (!string.IsNullOrEmpty(mensajeDuplicado))
             {
-                // Agregamos la pregunta al final del mensaje
                 string mensajeFinal = mensajeDuplicado + "\n\n¿Desea registrarlo de todas formas?";
 
-                // Si el usuario dice que NO, nos salimos. Si dice que SÍ, el código sigue y guarda.
                 if (MessageBox.Show(mensajeFinal, "Confirmar Duplicado", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
                 {
                     return;
                 }
             }
-            // -----------------------------------------------------------
 
             try
             {
@@ -146,11 +148,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
             catch (SqlException sqlEx)
             {
-                // Si el usuario forzó el guardado pero el RFC ya existe (clave única en SQL), 
-                // la base de datos lanzará error y aquí lo atrapamos.
                 if (sqlEx.Number == 2601 || sqlEx.Number == 2627)
                 {
-                    MessageBox.Show($"Imposible guardar: El RFC '{rfc}' ya está registrado en la base de datos y no se permiten duplicados exactos.",
+                    MessageBox.Show($"Imposible guardar: El RFC '{rfc}' ya está registrado y no se permiten duplicados exactos.",
                                     "Error de Restricción", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
@@ -172,12 +172,15 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 {
                     if (conn.State != System.Data.ConnectionState.Open) conn.Open();
 
-                    // 1. Buscamos coincidencia EXACTA de RFC
-                    string queryRFC = "SELECT Nombre FROM Clientes WHERE RFC = @RFC AND Id != @Id";
+                    // 1. Coincidencia EXACTA de RFC dentro de los clientes del usuario
+                    string queryRFC = @"SELECT Nombre FROM Clientes 
+                                       WHERE RFC = @RFC AND Id != @Id AND UsuarioId = @UsuarioId AND Activo = 1";
                     using (SqlCommand cmd = new SqlCommand(queryRFC, conn))
                     {
                         cmd.Parameters.AddWithValue("@RFC", rfc);
                         cmd.Parameters.AddWithValue("@Id", idExcluir);
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                         object result = cmd.ExecuteScalar();
                         if (result != null)
                         {
@@ -185,16 +188,19 @@ namespace SISTEMA_ACUMULATIVAS.Views
                         }
                     }
 
-                    // 2. Buscamos coincidencia FONÉTICA de Nombre (SOUNDEX)
-                    string queryNombre = @"SELECT Top 1 Nombre, RFC 
+                    // 2. Coincidencia FONÉTICA de Nombre dentro de los clientes del usuario
+                    string queryNombre = @"SELECT TOP 1 Nombre, RFC 
                                            FROM Clientes 
                                            WHERE SOUNDEX(Nombre) = SOUNDEX(@Nombre) 
-                                           AND Id != @Id";
+                                             AND Id != @Id 
+                                             AND UsuarioId = @UsuarioId 
+                                             AND Activo = 1";
 
                     using (SqlCommand cmd = new SqlCommand(queryNombre, conn))
                     {
                         cmd.Parameters.AddWithValue("@Nombre", nombre);
                         cmd.Parameters.AddWithValue("@Id", idExcluir);
+                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
 
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
@@ -216,7 +222,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 return "Error al validar duplicados: " + ex.Message;
             }
 
-            return null; // Todo limpio
+            return null;
         }
 
         private void EstablecerContextoUsuario(SqlConnection conn)
@@ -234,14 +240,20 @@ namespace SISTEMA_ACUMULATIVAS.Views
         {
             using (SqlConnection conn = _conexion.GetConnection())
             {
+                if (conn.State != System.Data.ConnectionState.Open) conn.Open();
                 EstablecerContextoUsuario(conn);
-                string query = "INSERT INTO Clientes (Nombre, RFC, CURP, TipoPersona, Activo, FechaRegistro) VALUES (@Nombre, @RFC, @CURP, @Tipo, 1, GETDATE())";
+
+                string query = @"INSERT INTO Clientes (Nombre, RFC, CURP, TipoPersona, UsuarioId, Activo, FechaRegistro) 
+                                 VALUES (@Nombre, @RFC, @CURP, @Tipo, @UsuarioId, 1, GETDATE())";
+
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Nombre", nombre);
                     cmd.Parameters.AddWithValue("@RFC", rfc);
                     cmd.Parameters.AddWithValue("@CURP", string.IsNullOrEmpty(curp) ? (object)DBNull.Value : curp);
                     cmd.Parameters.AddWithValue("@Tipo", tipo);
+                    cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -251,8 +263,13 @@ namespace SISTEMA_ACUMULATIVAS.Views
         {
             using (SqlConnection conn = _conexion.GetConnection())
             {
+                if (conn.State != System.Data.ConnectionState.Open) conn.Open();
                 EstablecerContextoUsuario(conn);
-                string query = "UPDATE Clientes SET Nombre=@Nombre, RFC=@RFC, CURP=@CURP, TipoPersona=@Tipo WHERE Id=@Id";
+
+                string query = @"UPDATE Clientes 
+                                 SET Nombre = @Nombre, RFC = @RFC, CURP = @CURP, TipoPersona = @Tipo 
+                                 WHERE Id = @Id AND UsuarioId = @UsuarioId";
+
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Id", id);
@@ -260,6 +277,8 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     cmd.Parameters.AddWithValue("@RFC", rfc);
                     cmd.Parameters.AddWithValue("@CURP", string.IsNullOrEmpty(curp) ? (object)DBNull.Value : curp);
                     cmd.Parameters.AddWithValue("@Tipo", tipo);
+                    cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -276,11 +295,14 @@ namespace SISTEMA_ACUMULATIVAS.Views
                     int id = int.Parse(txtId.Text);
                     using (SqlConnection conn = _conexion.GetConnection())
                     {
+                        if (conn.State != System.Data.ConnectionState.Open) conn.Open();
                         EstablecerContextoUsuario(conn);
-                        string query = "UPDATE Clientes SET Activo = 0 WHERE Id = @Id";
+
+                        string query = "UPDATE Clientes SET Activo = 0 WHERE Id = @Id AND UsuarioId = @UsuarioId";
                         using (SqlCommand cmd = new SqlCommand(query, conn))
                         {
                             cmd.Parameters.AddWithValue("@Id", id);
+                            cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
                             cmd.ExecuteNonQuery();
                         }
                     }
@@ -318,7 +340,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 txtNombre.Text = cliente.Nombre;
                 txtRFC.Text = cliente.RFC;
                 txtCURP.Text = cliente.CURP;
-                // Mapeo simple para el combo
                 if (cliente.TipoPersona == "F") cmbTipoPersona.SelectedIndex = 0;
                 else if (cliente.TipoPersona == "M") cmbTipoPersona.SelectedIndex = 1;
             }
@@ -345,7 +366,6 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 if (tag == "M")
                 {
                     txtRFC.MaxLength = 12;
-                    // Si tenía 13 y cambiaron a Moral, recortamos el último carácter
                     if (txtRFC.Text.Length > 12)
                     {
                         txtRFC.Text = txtRFC.Text.Substring(0, 12);
@@ -363,21 +383,15 @@ namespace SISTEMA_ACUMULATIVAS.Views
             ImportarClientesWindow ventanaImportar = new ImportarClientesWindow();
             if (ventanaImportar.ShowDialog() == true)
             {
-                // Vuelve a cargar tu lista de clientes en ClienteView
                 CargarClientes();
             }
         }
 
         private void BtnImportarClientes_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Abrimos la ventana de importación como diálogo modal
             ImportarClientesWindow ventanaImportar = new ImportarClientesWindow();
-
-            // 2. Si el usuario guardó los clientes con éxito (DialogResult == true)
             if (ventanaImportar.ShowDialog() == true)
             {
-                // 3. Llamas al método que usas en ClienteView para refrescar el DataGrid
-                // (por ejemplo: CargarClientes(); o CargarDatos();)
                 CargarClientes();
             }
         }
@@ -386,18 +400,14 @@ namespace SISTEMA_ACUMULATIVAS.Views
         {
             string rfc = txtRFC.Text.Trim().ToUpper();
 
-            // Si tiene 12 caracteres, preseleccionar Persona Moral
             if (rfc.Length == 12)
             {
                 cmbTipoPersona.SelectedIndex = 1; // Persona Moral
             }
-            // Si tiene 13 caracteres, preseleccionar Persona Física
             else if (rfc.Length == 13)
             {
                 cmbTipoPersona.SelectedIndex = 0; // Persona Física
             }
         }
-
-
     }
 }
