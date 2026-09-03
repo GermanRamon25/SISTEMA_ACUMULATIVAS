@@ -184,16 +184,46 @@ namespace SISTEMA_ACUMULATIVAS.Views
             }
         }
 
-        // --- ALERTA CONDICIONAL: SOLO SI ES AVISO OBLIGATORIO ---
+        // --- ALERTA CONDICIONAL: PERSONALIZADA POR TIPO DE OPERACIÓN ---
         private void cmbTipoOperacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_seleccionAutomatica) return;
 
             if (cmbTipoOperacion.SelectedItem is TipoOperacionItem itemSeleccionado)
             {
+                // 1. Mensaje específico para: Compraventa de Acciones y Partes Sociales
+                if (itemSeleccionado.Nombre.Trim().Equals("Compraventa de Acciones y Partes Sociales", StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show(
+                        $"¡ATENCIÓN - AVISO OBLIGATORIO!\n\n" +
+                        $"Ha seleccionado: {itemSeleccionado.Nombre}\n\n" +
+                        "Esta operación requiere la presentación de AVISO OBLIGATORIO ante el portal de la UIF en todos los casos. Asegúrese de integrar el expediente único de identificación.",
+                        "Alerta Ley Antilavado",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                // 2. Mensaje específico para: Constitución o Modificación de Fideicomisos (4,000 UMA)
+                if (itemSeleccionado.Nombre.Trim().StartsWith("Constitución o Modificación de Fideicomisos", StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show(
+                        $"¡ATENCIÓN - AVISO OBLIGATORIO!\n\n" +
+                        $"Ha seleccionado: {itemSeleccionado.Nombre}\n\n" +
+                        "Esta operación requiere la presentación de AVISO OBLIGATORIO ante el portal de la UIF en todos los casos, siempre y cuando rebase el umbral de UMAS señalado. Asegúrese de integrar el expediente único de identificación.",
+                        "Alerta Ley Antilavado",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                // 3. Mensaje general para cualquier otra operación marcada con EsAvisoObligatorio
                 if (itemSeleccionado.EsAvisoObligatorio)
                 {
-                    MessageBox.Show($"¡ATENCIÓN - AVISO OBLIGATORIO!\n\nHa seleccionado:\n{itemSeleccionado.Nombre}\n\nEsta operación requiere la presentación de AVISO OBLIGATORIO ante el portal de la UIF, independientemente de que no se rebase el umbral de UMAS. Asegúrese de integrar el expediente correspondiente.",
+                    MessageBox.Show(
+                        $"¡ATENCIÓN - AVISO OBLIGATORIO!\n\n" +
+                        $"Ha seleccionado:\n{itemSeleccionado.Nombre}\n\n" +
+                        "Esta operación requiere la presentación de AVISO OBLIGATORIO ante el portal de la UIF, independientemente de que no se rebase el umbral de UMAS. Asegúrese de integrar el expediente correspondiente.",
                         "Alerta Ley Antilavado",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);

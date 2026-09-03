@@ -157,7 +157,7 @@
                                         </Grid.RowDefinitions>
 
                                         <Border Grid.Row="0" Grid.Column="0" Background="#F8FAFC" Padding="8,6" BorderBrush="#E2E8F0" BorderThickness="0,0,1,1">
-                                            <TextBlock Text="Cliente / Razón Social:" FontWeight="Bold" FontSize="11.5" Foreground="#475569"/>
+                                            <TextBlock Text="Otorgante / Razón Social:" FontWeight="Bold" FontSize="11.5" Foreground="#475569"/>
                                         </Border>
                                         <Border Grid.Row="0" Grid.Column="1" Padding="8,6" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
                                             <TextBlock x:Name="txtFichaCliente" FontWeight="Bold" FontSize="11.5" Foreground="#0F172A"/>
@@ -202,7 +202,7 @@
                                     </DataGrid.ColumnHeaderStyle>
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Fecha" Binding="{Binding FechaOperacion, StringFormat=dd/MM/yyyy}" Width="95"/>
-                                        <DataGridTextColumn Header="Folio" Binding="{Binding FolioEscritura}" Width="75"/>
+                                        <DataGridTextColumn Header="No.Escritura" Binding="{Binding FolioEscritura}" Width="80"/>
                                         <DataGridTemplateColumn Header="Tipo de Operación Notarial" Width="*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>

@@ -67,7 +67,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                                     Nombre = reader["Nombre"].ToString(),
                                     RFC = reader["RFC"].ToString(),
                                     CURP = reader["CURP"] != DBNull.Value ? reader["CURP"].ToString() : string.Empty,
-                                    TipoPersona = reader["TipoPersona"].ToString(),
+                                    TipoPersona = reader["TipoPersona"] != DBNull.Value ? reader["TipoPersona"].ToString() : string.Empty,
                                     FechaRegistro = (DateTime)reader["FechaRegistro"],
                                     Activo = (bool)reader["Activo"]
                                 });
@@ -105,16 +105,19 @@ namespace SISTEMA_ACUMULATIVAS.Views
             string curp = txtCURP.Text.Trim().ToUpper();
             string tipoPersona = ((ComboBoxItem)cmbTipoPersona.SelectedItem).Tag.ToString();
 
-            // Validación de longitud de RFC
-            if (tipoPersona == "F" && rfc.Length != 13)
+            // Validación de longitud de RFC (Se omite si el cliente aún está en estatus provisional PENDIENTE)
+            if (rfc != "PENDIENTE")
             {
-                MessageBox.Show("El RFC de una Persona FÍSICA debe tener 13 caracteres.", "Formato Incorrecto", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (tipoPersona == "M" && rfc.Length != 12)
-            {
-                MessageBox.Show("El RFC de una Persona MORAL debe tener 12 caracteres.", "Formato Incorrecto", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                if (tipoPersona == "F" && rfc.Length != 13)
+                {
+                    MessageBox.Show("El RFC de una Persona FÍSICA debe tener 13 caracteres.", "Formato Incorrecto", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (tipoPersona == "M" && rfc.Length != 12)
+                {
+                    MessageBox.Show("El RFC de una Persona MORAL debe tener 12 caracteres.", "Formato Incorrecto", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
             }
 
             int idActual = 0;
@@ -172,19 +175,22 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 {
                     if (conn.State != System.Data.ConnectionState.Open) conn.Open();
 
-                    // 1. Coincidencia EXACTA de RFC dentro de los clientes del usuario
-                    string queryRFC = @"SELECT Nombre FROM Clientes 
-                                       WHERE RFC = @RFC AND Id != @Id AND UsuarioId = @UsuarioId AND Activo = 1";
-                    using (SqlCommand cmd = new SqlCommand(queryRFC, conn))
+                    // 1. Coincidencia EXACTA de RFC dentro de los clientes del usuario (Solo si no es provisional "PENDIENTE")
+                    if (!string.IsNullOrWhiteSpace(rfc) && rfc != "PENDIENTE")
                     {
-                        cmd.Parameters.AddWithValue("@RFC", rfc);
-                        cmd.Parameters.AddWithValue("@Id", idExcluir);
-                        cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
-
-                        object result = cmd.ExecuteScalar();
-                        if (result != null)
+                        string queryRFC = @"SELECT Nombre FROM Clientes 
+                                           WHERE RFC = @RFC AND Id != @Id AND UsuarioId = @UsuarioId AND Activo = 1";
+                        using (SqlCommand cmd = new SqlCommand(queryRFC, conn))
                         {
-                            return $"El RFC ingresado ya pertenece al cliente: {result}.";
+                            cmd.Parameters.AddWithValue("@RFC", rfc);
+                            cmd.Parameters.AddWithValue("@Id", idExcluir);
+                            cmd.Parameters.AddWithValue("@UsuarioId", ClsSesion.UsuarioId);
+
+                            object result = cmd.ExecuteScalar();
+                            if (result != null)
+                            {
+                                return $"El RFC ingresado ya pertenece al cliente: {result}.";
+                            }
                         }
                     }
 
@@ -342,6 +348,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 txtCURP.Text = cliente.CURP;
                 if (cliente.TipoPersona == "F") cmbTipoPersona.SelectedIndex = 0;
                 else if (cliente.TipoPersona == "M") cmbTipoPersona.SelectedIndex = 1;
+                else cmbTipoPersona.SelectedIndex = -1;
             }
         }
 
@@ -365,10 +372,14 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 string tag = itemSeleccionado.Tag?.ToString();
                 if (tag == "M")
                 {
-                    txtRFC.MaxLength = 12;
-                    if (txtRFC.Text.Length > 12)
+                    // Si no es el valor provisional, ajustamos la longitud máxima
+                    if (txtRFC.Text.Trim().ToUpper() != "PENDIENTE")
                     {
-                        txtRFC.Text = txtRFC.Text.Substring(0, 12);
+                        txtRFC.MaxLength = 12;
+                        if (txtRFC.Text.Length > 12)
+                        {
+                            txtRFC.Text = txtRFC.Text.Substring(0, 12);
+                        }
                     }
                 }
                 else // Persona Física
@@ -399,6 +410,9 @@ namespace SISTEMA_ACUMULATIVAS.Views
         private void txtRFC_TextChanged(object sender, TextChangedEventArgs e)
         {
             string rfc = txtRFC.Text.Trim().ToUpper();
+
+            // Si es PENDIENTE no forzamos cambio automático de combo
+            if (rfc == "PENDIENTE") return;
 
             if (rfc.Length == 12)
             {

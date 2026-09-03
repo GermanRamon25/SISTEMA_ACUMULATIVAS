@@ -104,10 +104,17 @@ namespace SISTEMA_ACUMULATIVAS
                 return;
             }
 
+            // 1. Limpiar variables globales en memoria
             ClsSesion.CerrarSesion();
-            this.Hide();
 
+            // 2. Preparar la ventana de Login y asignarla temporalmente como MainWindow
             LoginWindow login = new LoginWindow();
+            Application.Current.MainWindow = login;
+
+            // 3. Cerrar por completo la ventana actual (libera recursos y vistas cacheadas)
+            this.Close();
+
+            // 4. Mostrar el login modal
             bool? resultado = login.ShowDialog();
 
             if (resultado == true)
@@ -115,7 +122,6 @@ namespace SISTEMA_ACUMULATIVAS
                 MainWindow nuevoDashboard = new MainWindow();
                 Application.Current.MainWindow = nuevoDashboard;
                 nuevoDashboard.Show();
-                this.Close();
             }
             else
             {

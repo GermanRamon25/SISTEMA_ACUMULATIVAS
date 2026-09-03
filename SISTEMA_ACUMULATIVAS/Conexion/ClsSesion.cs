@@ -41,11 +41,11 @@ namespace SISTEMA_ACUMULATIVAS.Conexion
             UsuarioId = 0;
             NombreUsuario = "Sistema";
             Rol = "N/A";
-            NumeroNotaria = "";
-            NombreTitular = "";
-            DireccionCompleta = "";
-            TelefonoNotaria = "";
-            EmailNotaria = "";
+            NumeroNotaria = null;
+            NombreTitular = null;
+            DireccionCompleta = null;
+            TelefonoNotaria = null;
+            EmailNotaria = null;
         }
 
     }

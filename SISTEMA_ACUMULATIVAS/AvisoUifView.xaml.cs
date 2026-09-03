@@ -262,7 +262,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
                 txtFichaTituloNotaria.Text = $"NOTARÍA PÚBLICA NO. {numNotaria}";
                 txtFichaDireccion.Text = $"{direccion} | Control Interno LFPIORPI";
                 txtFichaTitularFirma.Text = $"LIC. {titular}";
-                txtFichaSubtituloFirma.Text = $"Notario Público Titular No. {numNotaria}";
+                txtFichaSubtituloFirma.Text = $"Notario Público No. {numNotaria}";
 
                 // 2. Datos del Cliente seleccionado
                 txtFichaCliente.Text = item.NombreCliente;

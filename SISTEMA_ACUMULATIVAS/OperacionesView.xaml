@@ -249,7 +249,7 @@
                           RowHeight="30">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="No.Escritura" Binding="{Binding FolioEscritura}" Width="100"/>
-                        <DataGridTextColumn Header="Cliente" Binding="{Binding ClienteNombre}" Width="*"/>
+                        <DataGridTextColumn Header="Otorgante" Binding="{Binding ClienteNombre}" Width="*"/>
                         <DataGridTextColumn Header="Tipo Operación" Binding="{Binding TipoOperacion}" Width="160"/>
                         <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat='C'}" Width="120"/>
                         <DataGridTextColumn Header="Fecha" Binding="{Binding FechaOperacion, StringFormat='dd/MM/yyyy'}" Width="100"/>

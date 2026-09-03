@@ -155,7 +155,7 @@ namespace SISTEMA_ACUMULATIVAS.Services
                 tblOperaciones.SetWidths(new float[] { 15f, 12f, 50f, 23f });
 
                 // Cabeceras oscuras
-                string[] encabezados = { "Fecha", "Folio", "Tipo de Operación Notarial", "Monto" };
+                string[] encabezados = { "Fecha", "No.Escritura", "Tipo de Operación Notarial", "Monto" };
                 foreach (var h in encabezados)
                 {
                     PdfPCell cellH = new PdfPCell(new Phrase(h, fHeaderTabla))
@@ -166,7 +166,7 @@ namespace SISTEMA_ACUMULATIVAS.Services
                         PaddingBottom = 6f,
                         PaddingLeft = 5f,
                         PaddingRight = 5f,
-                        HorizontalAlignment = (h == "Monto" ? Element.ALIGN_RIGHT : (h == "Folio" ? Element.ALIGN_CENTER : Element.ALIGN_LEFT))
+                        HorizontalAlignment = (h == "Monto" ? Element.ALIGN_RIGHT : (h == "No.Escritura" ? Element.ALIGN_CENTER : Element.ALIGN_LEFT))
                     };
                     tblOperaciones.AddCell(cellH);
                 }
@@ -242,7 +242,7 @@ namespace SISTEMA_ACUMULATIVAS.Services
                     PaddingTop = 6f
                 };
                 cellFirma.AddElement(new PdfParagraph($"LIC. {titular}", fFirmaTitular) { Alignment = Element.ALIGN_CENTER });
-                cellFirma.AddElement(new PdfParagraph($"Notario Público Titular No. {numNotaria}", fFirmaSub) { Alignment = Element.ALIGN_CENTER });
+                cellFirma.AddElement(new PdfParagraph($"Notario Público  No. {numNotaria}", fFirmaSub) { Alignment = Element.ALIGN_CENTER });
                 tblFirma.AddCell(cellFirma);
                 doc.Add(tblFirma);
 

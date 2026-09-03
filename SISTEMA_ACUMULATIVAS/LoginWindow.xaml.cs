@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using SISTEMA_ACUMULATIVAS.Conexion;
+using SISTEMA_ACUMULATIVAS.Models; // O el namespace exacto donde esté ClsSesion
 
 namespace SISTEMA_ACUMULATIVAS
 {
@@ -17,6 +18,7 @@ namespace SISTEMA_ACUMULATIVAS
         {
             InitializeComponent();
             _conexion = new ClsConexion();
+            this.Loaded += Window_Loaded;
 
             this.Loaded += (s, e) => txtUsuario.Focus();
         }
@@ -210,9 +212,9 @@ namespace SISTEMA_ACUMULATIVAS
 
                 // Consultamos el usuario independientemente del estado para dar retroalimentación clara
                 string query = @"
-                    SELECT Id, PasswordHash, PasswordSalt, Rol, NombreCompleto, Activo 
-                    FROM Usuarios 
-                    WHERE Usuario = @usuario";
+            SELECT Id, PasswordHash, PasswordSalt, Rol, NombreCompleto, Activo 
+            FROM Usuarios 
+            WHERE Usuario = @usuario";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -237,6 +239,9 @@ namespace SISTEMA_ACUMULATIVAS
 
                             if (ClsSeguridad.VerificarPasswordHash(password, hashGuardado, saltGuardado))
                             {
+                                // Limpieza preventiva de cualquier residuo previo en memoria
+                                ClsSesion.CerrarSesion();
+
                                 // Registra al usuario en la sesión global con su ID
                                 ClsSesion.IniciarSesion(idUsuario, nombreUsuario, rolUsuario);
                                 return true;
@@ -336,6 +341,11 @@ namespace SISTEMA_ACUMULATIVAS
             {
                 txtPassword.Focus();
             }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            ClsSesion.CerrarSesion();
         }
     }
 }
