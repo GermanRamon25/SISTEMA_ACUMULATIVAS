@@ -6,7 +6,7 @@ namespace SISTEMA_ACUMULATIVAS.Conexion
 {
     public class ClsConexion
     {
-        private readonly string _connectionString = @"Server=ALONDRA\SQLEXPRESS;Database=ACUMULATIVAS_DB;Integrated Security=True;";
+        private readonly string _connectionString = @"Server=GERMAN25\SQLEXPRESS;Database=ACUMULATIVAS_DB;Integrated Security=True;";
 
         public SqlConnection GetConnection()
         {

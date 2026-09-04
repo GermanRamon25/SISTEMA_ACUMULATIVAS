@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -27,6 +28,7 @@ namespace SISTEMA_ACUMULATIVAS.Views
             CargarCatalogoOperaciones();
             CargarPapelera();
             CargarLogs();
+            CargarClientesParaExpediente();
         }
 
         // --- 1. UMA CONFIGURATION ---
@@ -221,15 +223,186 @@ namespace SISTEMA_ACUMULATIVAS.Views
             else MessageBox.Show("Seleccione un cliente de la lista.");
         }
 
-        // --- 4. SECURITY LOGS (AUDIT) ---
+        // --- 4. EXPEDIENTE ÚNICO DEL CLIENTE ---
+        private List<Cliente> _todosLosClientesExp;
+
+        public class OperacionExpediente
+        {
+            public DateTime FechaOperacion { get; set; }
+            public string FolioEscritura { get; set; }
+            public string TipoOperacion { get; set; }
+            public decimal Monto { get; set; }
+            public string Usuario { get; set; }
+        }
+
+        private void CargarClientesParaExpediente()
+        {
+            _todosLosClientesExp = new List<Cliente>();
+            try
+            {
+                using (SqlConnection conn = _conexion.GetConnection())
+                {
+                    string query = "SELECT Id, Nombre, RFC FROM Clientes WHERE Activo = 1 ORDER BY Nombre";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                _todosLosClientesExp.Add(new Cliente
+                                {
+                                    Id = (int)reader["Id"],
+                                    Nombre = reader["Nombre"].ToString(),
+                                    RFC = reader["RFC"] != DBNull.Value ? reader["RFC"].ToString() : ""
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private void txtBuscarClienteExp_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string busqueda = txtBuscarClienteExp.Text.Trim().ToLower();
+
+            if (string.IsNullOrWhiteSpace(busqueda))
+            {
+                popupClientesExp.IsOpen = false;
+                pnlResumenExpediente.Visibility = Visibility.Collapsed;
+                dgExpedienteOperaciones.ItemsSource = null;
+                return;
+            }
+
+            var filtrados = _todosLosClientesExp
+                .Where(c => c.Nombre.ToLower().Contains(busqueda) || (!string.IsNullOrEmpty(c.RFC) && c.RFC.ToLower().Contains(busqueda)))
+                .Take(10)
+                .ToList();
+
+            if (filtrados.Count > 0 && txtBuscarClienteExp.IsFocused)
+            {
+                lstClientesExp.ItemsSource = filtrados;
+                popupClientesExp.IsOpen = true;
+            }
+            else
+            {
+                popupClientesExp.IsOpen = false;
+            }
+        }
+
+        private void lstClientesExp_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lstClientesExp.SelectedItem is Cliente seleccionado)
+            {
+                txtBuscarClienteExp.TextChanged -= txtBuscarClienteExp_TextChanged;
+                txtBuscarClienteExp.Text = seleccionado.Nombre;
+                txtBuscarClienteExp.TextChanged += txtBuscarClienteExp_TextChanged;
+
+                popupClientesExp.IsOpen = false;
+                CargarExpedienteCliente(seleccionado.Id, seleccionado.Nombre, seleccionado.RFC);
+            }
+        }
+
+        private void CargarExpedienteCliente(int clienteId, string nombre, string rfc)
+        {
+            List<OperacionExpediente> operaciones = new List<OperacionExpediente>();
+            decimal montoTotal = 0;
+
+            try
+            {
+                using (SqlConnection conn = _conexion.GetConnection())
+                {
+                    string query = @"SELECT o.FechaOperacion, o.FolioEscritura, o.TipoOperacion, o.Monto, U.Usuario
+                                     FROM Operaciones o
+                                     LEFT JOIN Usuarios U ON o.UsuarioId = U.Id
+                                     WHERE o.ClienteId = @ClienteId
+                                     ORDER BY o.FechaOperacion DESC";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@ClienteId", clienteId);
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                decimal monto = reader["Monto"] != DBNull.Value ? (decimal)reader["Monto"] : 0;
+                                montoTotal += monto;
+
+                                operaciones.Add(new OperacionExpediente
+                                {
+                                    FechaOperacion = (DateTime)reader["FechaOperacion"],
+                                    FolioEscritura = reader["FolioEscritura"].ToString(),
+                                    TipoOperacion = reader["TipoOperacion"].ToString(),
+                                    Monto = monto,
+                                    Usuario = reader["Usuario"] != DBNull.Value ? reader["Usuario"].ToString() : "N/A"
+                                });
+                            }
+                        }
+                    }
+                }
+
+                lblExpNombre.Text = nombre;
+                lblExpRFC.Text = "RFC: " + (!string.IsNullOrEmpty(rfc) ? rfc : "N/D");
+                lblExpTotalOps.Text = operaciones.Count.ToString();
+                lblExpMontoTotal.Text = montoTotal.ToString("C");
+
+                dgExpedienteOperaciones.ItemsSource = operaciones;
+                pnlResumenExpediente.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar expediente: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // --- DESCARGAR EXPEDIENTE PDF ---
+        private void btnDescargarExpediente_Click(object sender, RoutedEventArgs e)
+        {
+            if (dgExpedienteOperaciones.ItemsSource is List<OperacionExpediente> operaciones && operaciones.Count > 0)
+            {
+                string nombreCliente = lblExpNombre.Text;
+                string rfcCliente = lblExpRFC.Text.Replace("RFC: ", "");
+                string totalOperaciones = lblExpTotalOps.Text;
+                string montoHistorico = lblExpMontoTotal.Text;
+
+                // Configuramos la ventana de guardado
+                Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
+                {
+                    FileName = $"Expediente_{rfcCliente}_{DateTime.Now:yyyyMMdd}",
+                    DefaultExt = ".pdf",
+                    Filter = "Documentos PDF (.pdf)|*.pdf"
+                };
+
+                if (dlg.ShowDialog() == true)
+                {
+                    try
+                    {
+                        // Llamamos al método estático directamente, sin hacer "new"
+                        Services.PdfReporteService.GenerarExpedienteClientePDF(dlg.FileName, nombreCliente, rfcCliente, totalOperaciones, montoHistorico, operaciones);
+
+                        MessageBox.Show("El reporte del expediente se ha generado y guardado exitosamente.", "PDF Generado", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error al generar el PDF: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("No hay operaciones en el expediente para generar un reporte.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        // --- 5. SECURITY LOGS (AUDIT) ---
         public class LogItem
         {
             public DateTime Fecha { get; set; }
             public string Usuario { get; set; }
-            public string Accion { get; set; } // Valor técnico original
+            public string Accion { get; set; }
             public string Detalle { get; set; }
 
-            // Traducción a lenguaje natural amigable para la notaría
             public string AccionAmigable
             {
                 get
@@ -246,8 +419,8 @@ namespace SISTEMA_ACUMULATIVAS.Views
             {
                 get
                 {
-                    if (Accion.Contains("INSERT")) return "#15803D"; // Verde corporativo
-                    if (Accion.Contains("UPDATE")) return "#B45309"; // Oro/Naranja
+                    if (Accion.Contains("INSERT")) return "#15803D";
+                    if (Accion.Contains("UPDATE")) return "#B45309";
                     return "#475569";
                 }
             }

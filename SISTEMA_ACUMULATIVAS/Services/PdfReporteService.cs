@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Collections.Generic;
 using SISTEMA_ACUMULATIVAS.Conexion;
 using SISTEMA_ACUMULATIVAS.Models;
 
@@ -11,6 +12,9 @@ using iTextSharp.text.pdf.draw;
 // Alias explícitos para compatibilidad con WPF
 using PdfParagraph = iTextSharp.text.Paragraph;
 using PdfRectangle = iTextSharp.text.Rectangle;
+
+// Alias para acceder a la clase OperacionExpediente de la vista
+using static SISTEMA_ACUMULATIVAS.Views.PanelControlView;
 
 namespace SISTEMA_ACUMULATIVAS.Services
 {
@@ -263,6 +267,139 @@ namespace SISTEMA_ACUMULATIVAS.Services
             }
         }
 
+        // =========================================================================
+        // NUEVO MÉTODO: GENERAR EXPEDIENTE ÚNICO DE CLIENTE
+        // =========================================================================
+        public static void GenerarExpedienteClientePDF(string rutaDestino, string nombre, string rfc, string totalOps, string montoTotal, List<OperacionExpediente> operaciones)
+        {
+            Document doc = new Document(PageSize.LETTER, 36f, 36f, 30f, 30f);
+
+            using (FileStream fs = new FileStream(rutaDestino, FileMode.Create))
+            {
+                PdfWriter writer = PdfWriter.GetInstance(doc, fs);
+                doc.Open();
+
+                // 1. PALETA DE COLORES EXACTA
+                BaseColor colorNotariaOscuro = new BaseColor(24, 43, 73);
+                BaseColor colorAzulSubtitulo = new BaseColor(0, 122, 204);
+                BaseColor colorGrisTexto = new BaseColor(108, 117, 125);
+                BaseColor colorBordeCuadricula = new BaseColor(222, 226, 230);
+                BaseColor colorHeaderTabla = new BaseColor(28, 45, 66);
+                BaseColor colorVerdeMonto = new BaseColor(21, 128, 61);
+
+                // 2. TIPOGRAFÍAS
+                Font fNotariaTitulo = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 15f, colorNotariaOscuro);
+                Font fSubtituloDoc = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10.5f, colorAzulSubtitulo);
+                Font fUbicacion = FontFactory.GetFont(FontFactory.HELVETICA, 8.5f, colorGrisTexto);
+                Font fGridEtiqueta = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9f, new BaseColor(70, 80, 95));
+                Font fGridValor = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9.5f, BaseColor.BLACK);
+                Font fGridMonto = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 11f, colorVerdeMonto);
+                Font fHeaderTabla = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9f, BaseColor.WHITE);
+                Font fCeldaTabla = FontFactory.GetFont(FontFactory.HELVETICA, 8.5f, BaseColor.BLACK);
+                Font fFirmaTitular = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9.5f, BaseColor.BLACK);
+                Font fFirmaSub = FontFactory.GetFont(FontFactory.HELVETICA, 8.5f, colorGrisTexto);
+                Font fFooter = FontFactory.GetFont(FontFactory.HELVETICA, 7.5f, new BaseColor(120, 130, 140));
+
+                // Datos Notaría
+                string numNotaria = !string.IsNullOrWhiteSpace(ClsSesion.NumeroNotaria) ? ClsSesion.NumeroNotaria : "28";
+                string titular = !string.IsNullOrWhiteSpace(ClsSesion.NombreTitular) ? ClsSesion.NombreTitular.ToUpper() : "TITULAR NO CONFIGURADO";
+                string direccion = !string.IsNullOrWhiteSpace(ClsSesion.DireccionCompleta) ? ClsSesion.DireccionCompleta : "GUASAVE SINALOA 81077";
+
+                // 3. ENCABEZADO
+                PdfParagraph pNotaria = new PdfParagraph($"NOTARÍA PÚBLICA NO. {numNotaria}", fNotariaTitulo) { Alignment = Element.ALIGN_CENTER };
+                PdfParagraph pSub = new PdfParagraph("Expediente Único de Cliente (Historial Transaccional)", fSubtituloDoc) { Alignment = Element.ALIGN_CENTER };
+                PdfParagraph pDir = new PdfParagraph($"{direccion} | Control Interno LFPIORPI", fUbicacion) { Alignment = Element.ALIGN_CENTER, SpacingAfter = 10f };
+
+                doc.Add(pNotaria);
+                doc.Add(pSub);
+                doc.Add(pDir);
+
+                // Línea divisoria superior
+                LineSeparator lineaSuperior = new LineSeparator(1f, 100f, colorAzulSubtitulo, Element.ALIGN_CENTER, -2);
+                doc.Add(new Chunk(lineaSuperior));
+                doc.Add(new PdfParagraph(" ") { Font = FontFactory.GetFont(FontFactory.HELVETICA, 4f) });
+
+                // 4. TABLA DE RESUMEN
+                PdfPTable tblCliente = new PdfPTable(2) { WidthPercentage = 100f, SpacingBefore = 10f, SpacingAfter = 15f };
+                tblCliente.SetWidths(new float[] { 30f, 70f });
+
+                AgregarCeldaGrid(tblCliente, "Cliente / Razón Social:", fGridEtiqueta, colorBordeCuadricula);
+                AgregarCeldaGrid(tblCliente, nombre, fGridValor, colorBordeCuadricula);
+
+                AgregarCeldaGrid(tblCliente, "RFC:", fGridEtiqueta, colorBordeCuadricula);
+                AgregarCeldaGrid(tblCliente, rfc, fGridValor, colorBordeCuadricula);
+
+                AgregarCeldaGrid(tblCliente, "Total de Escrituras:", fGridEtiqueta, colorBordeCuadricula);
+                AgregarCeldaGrid(tblCliente, totalOps, fGridValor, colorBordeCuadricula);
+
+                AgregarCeldaGrid(tblCliente, "Monto Histórico Acumulado:", fGridEtiqueta, colorBordeCuadricula);
+                AgregarCeldaGrid(tblCliente, montoTotal, fGridMonto, colorBordeCuadricula);
+
+                doc.Add(tblCliente);
+
+                // 5. TABLA DESGLOSE DE OPERACIONES
+                PdfPTable tblOps = new PdfPTable(5) { WidthPercentage = 100f, SpacingAfter = 20f };
+                tblOps.SetWidths(new float[] { 13f, 13f, 40f, 17f, 17f });
+
+                string[] headers = { "Fecha", "No. Escritura", "Tipo de Operación", "Monto", "Responsable" };
+                foreach (string h in headers)
+                {
+                    PdfPCell cell = new PdfPCell(new Phrase(h, fHeaderTabla))
+                    {
+                        BackgroundColor = colorHeaderTabla,
+                        Border = PdfRectangle.NO_BORDER,
+                        PaddingTop = 6f,
+                        PaddingBottom = 6f,
+                        PaddingLeft = 5f,
+                        PaddingRight = 5f,
+                        HorizontalAlignment = h == "Monto" ? Element.ALIGN_RIGHT : (h == "No. Escritura" ? Element.ALIGN_CENTER : Element.ALIGN_LEFT)
+                    };
+                    tblOps.AddCell(cell);
+                }
+
+                foreach (var op in operaciones)
+                {
+                    tblOps.AddCell(CrearCeldaOperacion(op.FechaOperacion.ToString("dd/MM/yyyy"), fCeldaTabla, Element.ALIGN_CENTER, colorBordeCuadricula));
+                    tblOps.AddCell(CrearCeldaOperacion(op.FolioEscritura, fCeldaTabla, Element.ALIGN_CENTER, colorBordeCuadricula));
+                    tblOps.AddCell(CrearCeldaOperacion(op.TipoOperacion, fCeldaTabla, Element.ALIGN_LEFT, colorBordeCuadricula));
+                    tblOps.AddCell(CrearCeldaOperacion(op.Monto.ToString("C2"), fGridValor, Element.ALIGN_RIGHT, colorBordeCuadricula));
+                    tblOps.AddCell(CrearCeldaOperacion(op.Usuario, fCeldaTabla, Element.ALIGN_CENTER, colorBordeCuadricula));
+                }
+
+                doc.Add(tblOps);
+
+                // 6. FIRMA Y PIE DE PÁGINA
+                PdfPTable tblFirma = new PdfPTable(1) { WidthPercentage = 45f, HorizontalAlignment = Element.ALIGN_CENTER, SpacingBefore = 30f, SpacingAfter = 15f };
+                PdfPCell cellFirma = new PdfPCell
+                {
+                    Border = PdfRectangle.TOP_BORDER,
+                    BorderWidthTop = 1f,
+                    BorderColorTop = colorGrisTexto,
+                    HorizontalAlignment = Element.ALIGN_CENTER,
+                    PaddingTop = 6f
+                };
+                cellFirma.AddElement(new PdfParagraph($"LIC. {titular}", fFirmaTitular) { Alignment = Element.ALIGN_CENTER });
+                cellFirma.AddElement(new PdfParagraph($"Notario Público No. {numNotaria}", fFirmaSub) { Alignment = Element.ALIGN_CENTER });
+                tblFirma.AddCell(cellFirma);
+                doc.Add(tblFirma);
+
+                LineSeparator lineaPie = new LineSeparator(0.5f, 100f, colorBordeCuadricula, Element.ALIGN_CENTER, -2);
+                doc.Add(new Chunk(lineaPie));
+
+                PdfParagraph pFooter = new PdfParagraph($"{DateTime.Now.Year} SISTEMA DE ACUMULATIVAS AG | Expediente generado el {DateTime.Now:dd/MM/yyyy HH:mm:ss}", fFooter)
+                {
+                    Alignment = Element.ALIGN_CENTER,
+                    SpacingBefore = 4f
+                };
+                doc.Add(pFooter);
+
+                doc.Close();
+            }
+        }
+
+        // =========================================================================
+        // MÉTODOS DE AYUDA PARA CREAR TABLAS
+        // =========================================================================
         private static void AgregarCeldaGrid(PdfPTable table, string texto, Font fuente, BaseColor colorBorde)
         {
             PdfPCell cell = new PdfPCell(new Phrase(texto, fuente))
