@@ -362,7 +362,7 @@
                                 Margin="35,40,35,40">
 
                         <!-- LOGO -->
-                        <Image Source="/Images/LOGO.ACUMULATIVAS.png"
+                        <Image Source="/Images/LOGO_ACUMULATIVAS.png"
                                Width="300"
                                Height="300"
                                Stretch="Uniform"

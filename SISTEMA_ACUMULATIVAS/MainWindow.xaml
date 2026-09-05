@@ -30,7 +30,7 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Imagen del Logo -->
-                    <Image Source="/Images/LOGO.ACUMULATIVAS.png" 
+                    <Image Source="/Images/LOGO_ACUMULATIVAS.png" 
                       Width="38" 
                       Height="38" 
                       Margin="0,0,12,0" 
