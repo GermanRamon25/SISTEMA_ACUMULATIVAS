@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Configuration; // LIBRERÍA NECESARIA PARA LEER EL APP.CONFIG
 
 namespace SISTEMA_ACUMULATIVAS.Conexion
 {
     public class ClsConexion
     {
-        private readonly string _connectionString = @"Server=GERMAN25\SQLEXPRESS;Database=ACUMULATIVAS_DB;Integrated Security=True;";
+        // El sistema ahora lee la conexión desde el App.config en lugar de tenerla quemada
+        private readonly string _connectionString = ConfigurationManager.ConnectionStrings["NotariaDB"].ConnectionString;
 
         public SqlConnection GetConnection()
         {
